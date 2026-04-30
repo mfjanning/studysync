@@ -1,32 +1,34 @@
 <template>
   <nav class="sticky top-0 z-50 bg-white shadow-md">
     <div class="flex items-center justify-between px-6 py-3">
-      
+
       <ul class="flex items-center">
-        <li class="pr-4">
-          <NuxtLink :to="startseiteLink" class="text-gray-700 font-medium hover:text-green-600 transition">
-            Startseite
-          </NuxtLink>
-        </li>
-        <li class="pr-4">
-          <NuxtLink to="/guide" class="text-gray-700 font-medium hover:text-green-600 transition">
-            Anleitung
-          </NuxtLink>
-        </li>
-        <li class="pr-4">
-          <NuxtLink to="/courses" class="text-gray-700 font-medium hover:text-green-600 transition">
-            Kurse
-          </NuxtLink>
-        </li>
-        <li class="pr-4">
-          <NuxtLink to="/lecturers" class="text-gray-700 font-medium hover:text-green-600 transition">
-            Dozenten
-          </NuxtLink>
-        </li>
+        <template v-if="user">
+          <li class="pr-4">
+            <NuxtLink :to="startseiteLink" class="text-gray-700 font-medium hover:text-green-600 transition">
+              Startseite
+            </NuxtLink>
+          </li>
+          <li class="pr-4">
+            <NuxtLink to="/guide" class="text-gray-700 font-medium hover:text-green-600 transition">
+              Anleitung
+            </NuxtLink>
+          </li>
+          <li class="pr-4">
+            <NuxtLink to="/courses" class="text-gray-700 font-medium hover:text-green-600 transition">
+              Kurse
+            </NuxtLink>
+          </li>
+          <li class="pr-4">
+            <NuxtLink to="/lecturers" class="text-gray-700 font-medium hover:text-green-600 transition">
+              Dozenten
+            </NuxtLink>
+          </li>
+        </template>
       </ul>
 
       <div class="flex items-center">
-        <NuxtLink to="/dataAdd">
+        <NuxtLink v-if="user" to="/dataAdd">
           <button class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition mr-2">
             Datei hochladen
           </button>

@@ -131,7 +131,7 @@ const latestUpdates = [
         </h2>
 
         <!-- Scrollbarer Bereich -->
-        <div class="max-h-64 overflow-y-auto pr-2 space-y-3">
+        <div class="max-h-64 overflow-y-auto pr-2 pt-2 pb-2 space-y-3">
 
           <NuxtLink
               v-for="update in latestUpdates"
