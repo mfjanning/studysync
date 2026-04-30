@@ -1,6 +1,9 @@
 //Landingpage für ausgeloggte User
 
 <script setup lang="ts">
+const goToLogin = () => {
+  navigateTo('/login')
+}
 </script>
 
 <template>
@@ -8,17 +11,21 @@
 
     <!-- Mittlerer Bereich -->
     <div class="center">
-      <img src="/StudySync_Logo.png" class="logo" />
+      <img
+          src="/StudySync_Logo.png"
+          class="logo"
+          @click="goToLogin"
+      />
       <p class="slogan">Study smarter. Not harder.</p>
     </div>
 
     <!-- Icons drumherum -->
-    <img src="/icon1.png" class="floating top-left" />
-    <img src="/icon7.png" class="floating top-right" />
-    <img src="/icon3.png" class="floating left" />
-    <img src="/icon4.png" class="floating right" />
-    <img src="/icon5.png" class="floating bottom-left" />
-    <img src="/icon6.png" class="floating bottom-right" />
+    <img src="/icon1.png" class="floating top-left" title="Teile Lernmaterialien mit anderen Studierenden!" />
+    <img src="/icon7.png" class="floating top-right" title="Finde die besten Zusammenfassungen!" />
+    <img src="/icon3.png" class="floating left" title="Bewerte Kurse und Dozenten!" />
+    <img src="/icon4.png" class="floating right" title="Diskutiere im Forum!" />
+    <img src="/icon5.png" class="floating bottom-left" title="Lerne effizienter mit StudySync!" />
+    <img src="/icon6.png" class="floating bottom-right" title="Wusstest du, dass der Master Nils Burger nach dem Erfinder der SWOSY App benannt ist?" />
 
   </div>
 </template>
@@ -51,7 +58,7 @@
 .logo:hover {
   transform: scale(1.04);
   box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.22);
-  cursor: default;
+  cursor: pointer;
 }
 
 .slogan {

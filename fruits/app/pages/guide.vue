@@ -15,7 +15,8 @@ const faqs = [
   },
   {
     frage: 'Wer kann Dateien hochladen?',
-    antwort: 'Jeder, der bereit ist, seine Unterlagen zu teilen. Einfach den "Datei hochladen" Button nutzen.'
+    antwort: 'Jeder, der bereit ist, seine Unterlagen zu teilen. Einfach den "Datei hochladen" Button nutzen Und die Felder entsprechens ausfüllen. Uploads sind bis ' +
+        '50 MB möglich.'
   },
   {
     frage: 'Wie funktionieren die Bewertungen?',

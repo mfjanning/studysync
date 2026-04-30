@@ -17,28 +17,32 @@ const user = useSupabaseUser()
            - desktop: nebeneinander -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-6">
 
-        <!-- LEFT: Logo und Slogan: -->
+        <!-- LEFT: Logo und Slogan -->
         <div class="text-center md:text-left">
 
           <!-- Logo / Name -->
-          <h2 class="text-xl font-semibold text-white
-                     transition-all duration-300
-                     hover:scale-105
-                     hover:text-transparent
-                     hover:bg-clip-text
-                     hover:bg-gradient-to-r
-                     hover:from-teal-500 hover:to-blue-600">
+          <h2
+              class="text-xl font-semibold text-white
+                   transition-all duration-300
+                   hover:scale-105
+                   hover:text-transparent
+                   hover:bg-clip-text
+                   hover:bg-gradient-to-r
+                   hover:from-teal-500 hover:to-blue-600"
+          >
             StudySync
           </h2>
 
           <!-- Slogan -->
-          <p class="text-sm text-gray-400
-                    transition-all duration-300
-                    hover:scale-105
-                    hover:text-transparent
-                    hover:bg-clip-text
-                    hover:bg-gradient-to-r
-                    hover:from-teal-500 hover:to-blue-600">
+          <p
+              class="text-sm text-gray-400
+                   transition-all duration-300
+                   hover:scale-105
+                   hover:text-transparent
+                   hover:bg-clip-text
+                   hover:bg-gradient-to-r
+                   hover:from-teal-500 hover:to-blue-600"
+          >
             From students, for students.
           </p>
         </div>
@@ -48,22 +52,19 @@ const user = useSupabaseUser()
 
           <!--
             Dynamischer Link:
-            - Eingeloggt: Verlinkung zum Dashboard
-            - Nicht eingeloggt: nicht klickbar ("#")
+            - Eingeloggt: Link führt zum Dashboard
+            - Ausgeloggt: Link bleibt sichtbar, aber Klick wird verhindert
           -->
           <NuxtLink
               :to="user ? '/dashboard' : '#'"
-
+              @click="!user && $event.preventDefault()"
               :class="[
-              // Basis-Styling (immer aktiv)
-              'text-sm transition-all duration-300',
+              // Basis-Styling + Hover-Effekt wie bei Fachschaft
+              'text-sm transition-all duration-300 hover:scale-105 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-teal-500 hover:to-blue-600',
 
-              // Zustand: User eingeloggt
-              user
-                ? 'text-gray-400 hover:scale-105 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-teal-500 hover:to-blue-600'
-
-                // Zustand: User NICHT eingeloggt
-                : 'text-gray-300 cursor-default pointer-events-none'
+              // Eingeloggt: normale graue Schrift
+              // Ausgeloggt: hellgrau, nicht klickbar wirkender Cursor
+              user ? 'text-gray-400' : 'text-gray-300 cursor-default'
             ]"
           >
             © 2026 StudySync – From students, for students.
@@ -73,7 +74,7 @@ const user = useSupabaseUser()
         <!-- RIGHT: Fachschaft Link -->
         <div class="text-sm text-gray-400 text-center md:text-right">
 
-          <!-- Externer Link zur FS Mathe/ Info -->
+          <!-- Externer Link zur FS Mathe/Info -->
           <a
               href="https://fsmathinf.uni-osnabrueck.de/"
               target="_blank"
