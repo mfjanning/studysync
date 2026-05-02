@@ -6,6 +6,7 @@ const { data: kurseData, pending, error } = await useFetch('/api/kurse');
 const selectedKurs = ref(null);
 const selectedTyp = ref('altklausur');
 const selectedFile = ref(null);
+const selectedJahr = ref(null);
 const isUploading = ref(false);
 const uploadMessage = ref('');
 
@@ -14,7 +15,7 @@ function handleFileChange(event) {
 }
 
 async function uploadFile() {
-  if (!selectedFile.value || !selectedKurs.value || !selectedTyp.value) {
+  if (!selectedFile.value || !selectedKurs.value || !selectedTyp.value || !selectedJahr.value) {
     uploadMessage.value = 'Bitte alle Felder ausfüllen.';
     return;
   }
@@ -25,6 +26,7 @@ async function uploadFile() {
   const formData = new FormData();
   formData.append('kursID', selectedKurs.value);
   formData.append('typ', selectedTyp.value);
+  formData.append('jahr', selectedJahr.value);
   formData.append('file', selectedFile.value, selectedFile.value.name);
 
   try {
@@ -35,6 +37,8 @@ async function uploadFile() {
 
     uploadMessage.value = `Upload erfolgreich! Datei: ${result.file.dateiname}`;
     selectedKurs.value = null;
+    selectedTyp.value = 'altklausur';
+    selectedJahr.value = null;
     selectedFile.value = null;
     document.getElementById('file').value = '';
 
@@ -78,13 +82,21 @@ async function uploadFile() {
           <option value="mitschrift">Mitschriften</option>
         </select>
       </div>
+
+      <div>
+        <label for="jahr">Jahr:</label>
+        <input type="number" id="jahr" v-model="selectedJahr" required />
+      </div>
+
       <div>
         <label for="file">Datei:</label>
         <input type="file" id="file" @change="handleFileChange" required>
       </div>
+
       <button type="submit" :disabled="isUploading">
         {{ isUploading ? 'Lade hoch...' : 'Hochladen' }}
       </button>
+
       <p v-if="uploadMessage">{{ uploadMessage }}</p>
     </form>
   </div>

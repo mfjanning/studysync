@@ -17,19 +17,32 @@ export default eventHandler(async (event) => {
 
   const multipartData = await readMultipartFormData(event);
 
+  const jahrData = multipartData?.find(el => el.name === 'jahr');
   const kursIdData = multipartData?.find(el => el.name === 'kursID');
   const typData = multipartData?.find(el => el.name === 'typ');
   const fileData = multipartData?.find(el => el.name === 'file');
 
-  if (!kursIdData || !typData || !fileData || !fileData.filename) {
-    throw createError({ statusCode: 400, statusMessage: 'Fehlende Daten: kursID, typ oder Datei nicht gefunden.' });
-  }
+  if (!kursIdData || !typData || !jahrData || !fileData || !fileData.filename) {
+    throw createError({ 
+      statusCode: 400, 
+      statusMessage: 'Fehlende Daten: kursID, typ, jahr oder Datei nicht gefunden.' 
+    });
+  } 
 
   const kursID = kursIdData.data.toString();
   const typ = typData.data.toString();
   const dateiname = fileData.filename;
   const einzigartigerDateiname = `${user.id}-${Date.now()}-${dateiname}`;
   const dateipfad = `${typ}/${kursID}/${einzigartigerDateiname}`;
+
+  const jahr = parseInt(jahrData.data.toString(), 10);
+
+  if (isNaN(jahr)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Jahr muss eine gültige Zahl sein.'
+    });
+  }
   
   const { error: uploadError } = await client.storage
     .from('kurs_dateien')
@@ -44,16 +57,17 @@ export default eventHandler(async (event) => {
   }
 
   const { data: dbData, error: insertError } = await client
-    .from('dateien')
-    .insert({
-      typ: typ,
-      kursID: kursID,
-      nutzerID: user.id,
-      dateipfad: dateipfad,
-      dateiname: dateiname
-    })
-    .select()
-    .single();
+  .from('dateien')
+  .insert({
+    typ: typ,
+    kursID: kursID,
+    nutzerID: user.id,
+    dateipfad: dateipfad,
+    dateiname: dateiname,
+    jahr: jahr
+  })
+  .select()
+  .single();
 
   if (insertError) {
     console.error('Supabase DB Error:', insertError);
