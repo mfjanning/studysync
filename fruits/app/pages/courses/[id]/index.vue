@@ -7,9 +7,9 @@ const route = useRoute()
 const urlId = route.params.id
 
 // 2. Daten laden
-const { data: course } = await useFetch('/api/kurse/' + urlId)
-const { data: forums } = await useFetch('/api/kurse/foren/' + urlId)
-const { data: files } = await useFetch('/api/dateien/' + urlId)
+const { data: course, refresh: refreshCourse } = await useFetch('/api/kurse/' + urlId)
+const { data: forums, refresh: refreshForums } = await useFetch('/api/kurse/foren/' + urlId)
+const { data: files, refresh: refreshFiles } = await useFetch('/api/dateien/' + urlId)
 
 const supabase = useSupabaseClient()
 const { data: { publicUrl } } = supabase.storage.from('kurs_dateien').getPublicUrl('')
@@ -29,8 +29,14 @@ const aktuelleDozentId = computed(() => {
 })
 
 // Wenn eine Bewertung gespeichert wurde, wird die Seite neu geladen
-const datenNeuLaden = () => {
-  window.location.reload()
+const datenNeuLaden = async () => {
+  // Diese Funktionen laden nur die Daten im Hintergrund neu
+  await refreshCourse()
+  await refreshForums()
+  await refreshFiles()
+  
+  // Da kein Seiten-Reload stattfindet, bleibt der Darkmode-Status 
+  // der Website (im HTML-Tag oder State) unangetastet!
 }
 
 // 4. Daten zusammenstellen
