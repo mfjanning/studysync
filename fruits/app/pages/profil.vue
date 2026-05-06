@@ -17,7 +17,20 @@ const avatars = [
   "/avatars/tiger.png"
 ]
 
-const saveAvatar = () => {
+const user = useSupabaseUser()
+
+// Aktuellen Avatar laden
+const { data: profileData } = await (supabase as any)
+  .from("profile")
+  .select("avatar")
+  .eq("id", user.value?.id)
+  .single()
+
+if (profileData?.avatar) {
+  selectedAvatar.value = profileData.avatar
+}
+
+const saveAvatar = async () => {
   message.value = ""
   errorMessage.value = ""
 
@@ -26,7 +39,18 @@ const saveAvatar = () => {
     return
   }
 
-  message.value = "Profilbild wurde ausgewählt."
+  const { error } = await (supabase as any)
+    .from("profile")
+    .update({ avatar: selectedAvatar.value })
+    .eq("id", user.value?.id)
+
+  if (error) {
+    errorMessage.value = "Profilbild konnte nicht gespeichert werden."
+    console.error(error)
+    return
+  }
+
+  message.value = "Profilbild wurde gespeichert."
 }
 
 const changePassword = async () => {
