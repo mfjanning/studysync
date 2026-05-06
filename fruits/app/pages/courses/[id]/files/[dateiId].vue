@@ -125,18 +125,25 @@ const kommentarAbsenden = async () => {
                   :key="k.id"
                   class="bg-slate-50 dark:bg-gray-800 rounded-2xl p-4 border border-slate-100 dark:border-gray-700 transition-colors duration-300"
               >
-                <div class="flex items-center justify-between mb-2">
-                  <span class="font-bold text-sm text-slate-800 dark:text-gray-100">
-                    {{ k.profile?.name || 'Nutzer' }}
-                  </span>
-                  <span class="text-xs text-slate-400 dark:text-gray-500 font-medium">
+                <div class="flex items-center gap-3 mb-2">
+                  <img
+                    v-if="k.profile?.avatar"
+                    :src="k.profile.avatar"
+                    :alt="k.profile?.name || 'Nutzer'"
+                    class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  />  
+                  <div v-else class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-black">
+                    {{ (k.profile?.name || 'N')[0].toUpperCase() }}
+                  </div>
+                  <span class="font-bold text-sm text-slate-800 flex-1">{{ k.profile?.name || 'Nutzer' }}</span>
+                  <span class="text-xs text-slate-400 font-medium">
                     {{ new Date(k.created_at).toLocaleDateString('de-DE', {
-                    day: '2-digit', month: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  }) }}
+                      day: '2-digit', month: '2-digit', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    }) }}
                   </span>
                 </div>
-                <p class="text-sm text-slate-700 dark:text-gray-300 leading-relaxed">{{ k.kommentar }}</p>
+                <p class="text-sm text-slate-700 leading-relaxed pl-11">{{ k.kommentar }}</p>
               </div>
             </div>
 

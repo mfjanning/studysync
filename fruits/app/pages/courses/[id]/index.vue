@@ -6,10 +6,33 @@ import { ref, computed } from 'vue'
 const route = useRoute()
 const urlId = route.params.id
 
-// 2. Daten laden
+// 2. Daten laden: Man fragt nun nur noch den spezifischen Kurs und dessen Zusatzdaten ab.
 const { data: course, refresh: refreshCourse } = await useFetch('/api/kurse/' + urlId)
 const { data: forums, refresh: refreshForums } = await useFetch('/api/kurse/foren/' + urlId)
 const { data: files, refresh: refreshFiles } = await useFetch('/api/dateien/' + urlId)
+
+const user = useSupabaseUser()
+const neuesDiskussionsThema = ref('')
+const postet = ref(false)
+const postFehler = ref('')
+
+const diskussionPosten = async () => {
+  if (!neuesDiskussionsThema.value.trim()) return
+  postet.value = true
+  postFehler.value = ''
+  try {
+    await $fetch('/api/kurse/foren', {
+      method: 'POST',
+      body: { kursID: Number(urlId), thema: neuesDiskussionsThema.value.trim() }
+    })
+    neuesDiskussionsThema.value = ''
+    await refreshForums()
+  } catch (err) {
+    postFehler.value = err?.data?.message || err?.message || 'Beitrag konnte nicht gespeichert werden.'
+  } finally {
+    postet.value = false
+  }
+}
 
 const supabase = useSupabaseClient()
 const { data: { publicUrl } } = supabase.storage.from('kurs_dateien').getPublicUrl('')
@@ -200,12 +223,14 @@ const toggleAbo = async () => {
   <div class="min-h-screen bg-slate-50 dark:bg-black font-sans text-slate-800 dark:text-gray-100 pb-12 transition-colors duration-300">
     <div class="max-w-7xl mx-auto p-4 md:p-8">
 
+      <!-- ZURÜCK-BUTTON -->
       <div class="mb-6 pl-2">
         <NuxtLink to="/courses" class="inline-flex items-center text-green-600 dark:text-green-400 hover:text-blue-700 dark:hover:text-blue-400 font-bold transition-colors">
           <span class="mr-2 text-2xl leading-none">&larr;</span> Zurück zur Kursübersicht
         </NuxtLink>
       </div>
 
+      <!-- HEADER -->
       <header class="rounded-[2.5rem] bg-gradient-to-br from-green-400 to-blue-600 dark:from-green-700 dark:to-blue-900 p-10 shadow-lg shadow-blue-900/10 dark:shadow-black/50 mb-8 relative overflow-hidden">
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
 
@@ -217,10 +242,13 @@ const toggleAbo = async () => {
         </p>
       </header>
 
+      <!-- Haupt-Grid-Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
+        <!-- LINKE SPALTE (Dateien & Kursinfos) -->
         <div class="lg:col-span-2 space-y-8">
 
+          <!-- Bereich: Dateien und Sortierung -->
           <section class="bg-white dark:bg-gray-900 rounded-[2rem] shadow-xl shadow-green-900/5 dark:shadow-black/40 border border-green-50 dark:border-gray-700 overflow-hidden transition-colors duration-300">
             <div class="p-8">
 
@@ -232,7 +260,6 @@ const toggleAbo = async () => {
 
               <!-- TABS UND SORTIER-BUTTON -->
               <div class="flex items-center justify-between border-b border-slate-100 dark:border-gray-700 mb-6 pb-2">
-                
                 <div class="flex overflow-x-auto gap-4">
                   <button
                       v-for="tab in tabs" :key="tab"
@@ -254,7 +281,6 @@ const toggleAbo = async () => {
               </div>
 
               <div class="space-y-4">
-
                 <div
                     v-if="sortierteMaterialien.length === 0"
                     class="p-8 text-center text-slate-400 dark:text-gray-400 font-medium bg-slate-50 dark:bg-gray-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-gray-700 transition-colors duration-300"
@@ -275,7 +301,6 @@ const toggleAbo = async () => {
                     </div>
                     <div class="min-w-0">
                       <p class="font-bold text-slate-800 dark:text-gray-100 truncate">{{ file.name }}</p>
-                      
                       <p class="text-xs text-slate-500 dark:text-gray-400 font-medium mt-0.5">
                         <span v-if="file.anzeigeSemester" class="text-blue-600 dark:text-blue-400 font-bold mr-2">
                           {{ file.anzeigeSemester }}
@@ -293,14 +318,13 @@ const toggleAbo = async () => {
                     📥
                   </a>
                 </div>
-
               </div>
 
             </div>
           </section>
 
+          <!-- Bereich: Dozent, Kurs Info & Bewertungen -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
             <div class="h-full flex flex-col bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-slate-100 dark:border-gray-700 shadow-lg shadow-blue-900/5 dark:shadow-black/40 hover:border-green-200 dark:hover:border-green-500 transition-colors">
               <p class="text-sm font-bold text-slate-400 dark:text-gray-500 mb-2">Dozent</p>
               <p class="font-bold text-slate-800 dark:text-gray-100 text-lg">{{ modulDaten.dozent }}</p>
@@ -339,81 +363,89 @@ const toggleAbo = async () => {
               </button>
             </div>
 
-            <div class="h-full flex flex-col bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-6 rounded-[2rem] border border-green-100 dark:border-gray-700 shadow-lg shadow-blue-900/5 dark:shadow-black/40 items-center text-center transition-colors duration-300">
-  
-              <div class="my-auto">
-                <p class="text-sm font-bold text-green-600 dark:text-green-400 mb-1 uppercase tracking-wider">Kurs-ID</p>
-                <p class="text-2xl font-black text-blue-900 dark:text-blue-300">{{ modulDaten.id }}</p>
-              </div>
-              
-              <button
-                @click="toggleAbo"
-                :disabled="togglingAbo"
-                :class="[
-                  'mt-auto w-full py-2 px-4 rounded-xl text-sm font-bold border transition-all duration-200 flex justify-center items-center gap-2',
-                  istAbonniert
-                    ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700 hover:bg-red-50 hover:text-red-500 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-700'
-                    : 'bg-white dark:bg-gray-800 text-slate-500 dark:text-gray-400 border-slate-200 dark:border-gray-600 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 dark:hover:bg-teal-900/20 dark:hover:text-teal-400',
-                  togglingAbo && 'opacity-50 cursor-not-allowed'
-                ]"
-              >
-                <span v-if="togglingAbo">Lädt...</span>
-                <template v-else>
-                  <span>{{ istAbonniert ? "✓" : "+" }}</span>
-                  <span>{{ istAbonniert ? "Abonniert" : "Abonnieren" }}</span>
-                </template>
-              </button>
+            <div class="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-[2rem] border border-green-100 shadow-lg shadow-blue-900/5 flex flex-col justify-center items-center text-center">
+              <p class="text-sm font-bold text-green-600 mb-1 uppercase tracking-wider">Kurs-ID</p>
+              <p class="text-2xl font-black text-blue-900">{{ modulDaten.id }}</p>
             </div>
-
           </div>
 
-        </div>
+        </div> <!-- Ende LINKE SPALTE -->
 
+        <!-- RECHTE SPALTE (Diskussionen) -->
         <aside class="bg-white dark:bg-gray-900 rounded-[2rem] shadow-xl shadow-green-900/5 dark:shadow-black/40 border border-slate-100 dark:border-gray-700 flex flex-col h-fit overflow-hidden transition-colors duration-300">
 
-          <div class="p-6 bg-slate-50 dark:bg-gray-800 border-b border-slate-100 dark:border-gray-700 text-center">
+          <div class="p-6 bg-slate-50 dark:bg-gray-800 border-b border-slate-100 dark:border-gray-700 text-center transition-colors duration-300">
             <h2 class="font-extrabold text-slate-700 dark:text-gray-100 uppercase tracking-widest text-sm">Diskussionen</h2>
           </div>
 
-          <div class="p-6 space-y-6">
-            <div class="group cursor-pointer">
-              <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">SQL JOIN-Fragen?</p>
-              <p class="text-xs font-medium text-slate-400 dark:text-gray-500 mt-1">Darian · vor 12 Min</p>
+          <!-- Echte Beiträge aus der Datenbank -->
+          <div class="p-6 space-y-4 max-h-72 overflow-y-auto">
+            <div v-if="!forums?.beitraege?.length" class="text-center py-4 text-slate-400 dark:text-gray-500 text-sm">
+              Noch keine Diskussionen.
             </div>
-            <div class="border-t border-slate-100 dark:border-gray-700 pt-5 group cursor-pointer">
-              <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Wann sind die Ergebnisse?</p>
-              <p class="text-xs font-medium text-slate-400 dark:text-gray-500 mt-1">Clara · vor 2 Std</p>
-            </div>
-            <div class="border-t border-slate-100 dark:border-gray-700 pt-5 group cursor-pointer">
-              <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Wie lerne ich Normalisierung?</p>
-              <p class="text-xs font-medium text-slate-400 dark:text-gray-500 mt-1">Jan · gestern</p>
-            </div>
-          </div>
-
-          <div class="p-6 mt-auto bg-slate-50 dark:bg-gray-800 space-y-4 transition-colors duration-300">
-              <textarea
-                  class="w-full p-4 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl text-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400 transition-colors duration-300"
-                  rows="3"
-                  placeholder="Stell eine Frage..."
-              ></textarea>
-
-            <button class="w-full bg-slate-800 dark:bg-gray-700 text-white font-bold py-3 rounded-full hover:bg-green-600 dark:hover:bg-green-600 transition-colors shadow-md">
-              POSTEN
-            </button>
-
-            <NuxtLink to="/forum" class="block">
-              <button class="w-full bg-slate-800 dark:bg-gray-700 text-white font-bold py-3 rounded-full hover:bg-green-600 dark:hover:bg-green-600 transition-colors shadow-md">
-                ALLE BEITRÄGE
-              </button>
+            <NuxtLink
+              v-for="(item, index) in forums?.beitraege"
+              :key="item.id"
+              :to="`/courses/${urlId}/${item.id}`"
+              :class="['block group', index > 0 ? 'border-t border-slate-100 dark:border-gray-700 pt-4' : '']"
+            >
+              <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 mb-2">{{ item.thema }}</p>
+              <div class="flex items-center gap-2">
+                <img
+                  v-if="item.profile?.avatar"
+                  :src="item.profile.avatar"
+                  :alt="item.profile?.name || 'Nutzer'"
+                  class="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                />
+                <div v-else class="w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0 text-white text-[10px] font-black">
+                  {{ (item.profile?.name || 'N')[0].toUpperCase() }}
+                </div>
+                <p class="text-xs font-medium text-slate-400 dark:text-gray-500">
+                  {{ item.profile?.name || 'Nutzer' }} ·
+                  {{ new Date(item.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) }}
+                </p>
+              </div>
             </NuxtLink>
           </div>
 
-        </aside>
+          <!-- Eingabe nur für angemeldete Nutzer -->
+          <div class="p-6 mt-auto bg-slate-50 dark:bg-gray-800 border-t border-slate-100 dark:border-gray-700 space-y-3 transition-colors duration-300">
+            <div v-if="user">
+              <p v-if="postFehler" class="text-red-500 text-xs font-medium mb-2">{{ postFehler }}</p>
+              <textarea
+                v-model="neuesDiskussionsThema"
+                class="w-full p-4 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl text-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-green-400 transition-colors duration-300"
+                rows="3"
+                placeholder="Stell eine Frage..."
+                :disabled="postet"
+              ></textarea>
+              <button
+                @click="diskussionPosten"
+                :disabled="postet || !neuesDiskussionsThema.trim()"
+                class="w-full bg-slate-800 dark:bg-gray-700 text-white font-bold py-3 rounded-full hover:bg-green-600 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md text-sm mt-3"
+              >
+                {{ postet ? 'WIRD GEPOSTET...' : 'POSTEN' }}
+              </button>
+            </div>
+            <div v-else class="text-center py-2">
+              <p class="text-slate-500 dark:text-gray-400 text-sm mb-3 font-medium">Anmelden um zu diskutieren.</p>
+              <NuxtLink
+                to="/login"
+                class="inline-block bg-slate-800 dark:bg-gray-700 text-white font-bold py-2 px-6 rounded-full hover:bg-green-600 dark:hover:bg-green-600 transition-colors text-sm"
+              >
+                Anmelden
+              </NuxtLink>
+            </div>
+          </div>
 
-      </div>
-    </div>
-  </div>
+        </aside> <!-- Ende RECHTE SPALTE -->
 
+      </div> <!-- Ende Haupt-Grid-Layout -->
+
+    </div> <!-- Ende max-w-7xl -->
+  </div> <!-- Ende min-h-screen -->
+
+  <!-- Popups -->
   <div v-if="zeigeKursBewertung" class="fixed inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <BewertungKurs
         :kursId="urlId"

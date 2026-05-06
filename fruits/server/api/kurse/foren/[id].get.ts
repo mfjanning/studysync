@@ -9,7 +9,7 @@ export default eventHandler(async (event) => {
   const client = await serverSupabaseClient(event);
 
   // @ts-ignore
-  const { data } = await client.from("forum_kurs").select("*, profile(name)").eq("kursID", event.context.params.id);
+  const { data } = await client.from("forum_kurs").select("*, profile(name, avatar)").eq("kursID", event.context.params.id);
   // @ts-ignore
   data?.sort((b, a) => a.created_at.localeCompare(b.created_at));
 
