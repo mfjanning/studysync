@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, onMounted } from "vue"
 
 const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 
 const selectedAvatar = ref("")
 const newPassword = ref("")
 const confirmPassword = ref("")
 const message = ref("")
 const errorMessage = ref("")
+const currentAvatar = ref("")
 
 const avatars = [
   "/avatars/affe.png",
@@ -17,17 +19,50 @@ const avatars = [
   "/avatars/tiger.png"
 ]
 
-const saveAvatar = () => {
+const saveAvatar = async () => {
   message.value = ""
   errorMessage.value = ""
+
+  if (!user.value) return
 
   if (!selectedAvatar.value) {
     errorMessage.value = "Bitte wähle zuerst ein Profilbild aus."
     return
   }
 
-  message.value = "Profilbild wurde ausgewählt."
+  const avatarName = selectedAvatar.value.split("/").pop()?.replace(".png", "")
+  try {
+    const result = await $fetch('/api/profile/avatar', {
+      method: 'POST',
+      body: {
+        avatar: avatarName
+      }
+    })
+
+    currentAvatar.value = `/avatars/${avatarName}.png`
+    console.log(currentAvatar.value)
+    message.value = "Profilbild wurde gespeichert."
+  } catch (error: any) {
+    console.error('Avatar Update Error:', error)
+    errorMessage.value = error.data?.statusMessage || "Profilbild konnte nicht gespeichert werden."
+  }
 }
+
+onMounted(async () => {
+  try {
+    // Dem Fetch-Aufruf sagen, dass ein Objekt mit einem String 'avatar' zurückkommt
+    const res = await $fetch<{ avatar: string }>('/api/profile/avatar')
+    
+    // Prüfen, ob res und res.avatar existieren
+    if (res?.avatar) {
+      currentAvatar.value = `/avatars/${res.avatar}.png`
+    } else {
+      currentAvatar.value = '/avatars/affe.png'
+    }
+  } catch (e) {
+    console.error("Avatar Load Error:", e)
+  }
+})
 
 const changePassword = async () => {
   message.value = ""
@@ -77,30 +112,41 @@ const changePassword = async () => {
   -->
   <div
       class="min-h-[calc(100vh-260px)]
-           bg-slate-50 dark:bg-black
-           font-sans text-slate-800 dark:text-gray-100
-           px-6 py-8 transition-colors duration-300"
+             bg-slate-50 dark:bg-black
+             font-sans text-slate-800 dark:text-gray-100
+             px-6 py-8 transition-colors duration-300"
   >
     <div class="max-w-4xl mx-auto">
 
       <!-- Überschrift -->
       <h1
           class="text-4xl font-black uppercase tracking-tight
-               text-slate-800 dark:text-gray-100
-               mb-8 ml-2"
+                 text-slate-800 dark:text-gray-100
+                 mb-8 ml-2"
       >
         Mein Profil
       </h1>
+      <div class="flex items-center gap-6 mb-8 ml-2">
+        <img
+          :src="currentAvatar || '/avatars/affe.png'"
+          alt="Profilbild"
+          class="w-24 h-24 rounded-full object-cover border-4 border-teal-400 shadow"
+        />
+
+        <div>
+          <p class="text-slate-500">Dein aktuelles Profilbild</p>
+        </div>
+      </div>
 
       <div class="space-y-8">
 
         <!-- Profilbild ändern -->
         <section
             class="bg-white dark:bg-gray-900
-                 border border-slate-100 dark:border-gray-700
-                 rounded-[2rem] p-8
-                 shadow-md shadow-blue-900/5 dark:shadow-black/40
-                 transition-colors duration-300"
+                   border border-slate-100 dark:border-gray-700
+                   rounded-[2rem] p-8
+                   shadow-md shadow-blue-900/5 dark:shadow-black/40
+                   transition-colors duration-300"
         >
           <h2 class="text-2xl font-bold text-slate-700 dark:text-gray-100 mb-2">
             Profilbild ändern
@@ -131,9 +177,9 @@ const changePassword = async () => {
           <button
               @click="saveAvatar"
               class="bg-gray-500 dark:bg-gray-700
-                   text-white px-6 py-3 rounded-xl
-                   hover:bg-gray-600 dark:hover:bg-gray-600
-                   transition"
+                     text-white px-6 py-3 rounded-xl
+                     hover:bg-gray-600 dark:hover:bg-gray-600
+                     transition"
           >
             Profilbild speichern
           </button>
@@ -142,10 +188,10 @@ const changePassword = async () => {
         <!-- Passwort ändern -->
         <section
             class="bg-white dark:bg-gray-900
-                 border border-slate-100 dark:border-gray-700
-                 rounded-[2rem] p-8
-                 shadow-md shadow-blue-900/5 dark:shadow-black/40
-                 transition-colors duration-300"
+                   border border-slate-100 dark:border-gray-700
+                   rounded-[2rem] p-8
+                   shadow-md shadow-blue-900/5 dark:shadow-black/40
+                   transition-colors duration-300"
         >
           <h2 class="text-2xl font-bold text-slate-700 dark:text-gray-100 mb-2">
             Passwort ändern
@@ -161,13 +207,13 @@ const changePassword = async () => {
                 type="password"
                 placeholder="Neues Passwort"
                 class="w-full px-6 py-4 rounded-2xl
-                     border border-slate-200 dark:border-gray-700
-                     shadow-sm
-                     focus:outline-none focus:ring-2 focus:ring-teal-400
-                     bg-white dark:bg-gray-800
-                     text-slate-800 dark:text-gray-100
-                     placeholder:text-slate-400 dark:placeholder:text-gray-500
-                     transition-colors duration-300"
+                       border border-slate-200 dark:border-gray-700
+                       shadow-sm
+                       focus:outline-none focus:ring-2 focus:ring-teal-400
+                       bg-white dark:bg-gray-800
+                       text-slate-800 dark:text-gray-100
+                       placeholder:text-slate-400 dark:placeholder:text-gray-500
+                       transition-colors duration-300"
             />
 
             <input
@@ -175,21 +221,21 @@ const changePassword = async () => {
                 type="password"
                 placeholder="Neues Passwort bestätigen"
                 class="w-full px-6 py-4 rounded-2xl
-                     border border-slate-200 dark:border-gray-700
-                     shadow-sm
-                     focus:outline-none focus:ring-2 focus:ring-teal-400
-                     bg-white dark:bg-gray-800
-                     text-slate-800 dark:text-gray-100
-                     placeholder:text-slate-400 dark:placeholder:text-gray-500
-                     transition-colors duration-300"
+                       border border-slate-200 dark:border-gray-700
+                       shadow-sm
+                       focus:outline-none focus:ring-2 focus:ring-teal-400
+                       bg-white dark:bg-gray-800
+                       text-slate-800 dark:text-gray-100
+                       placeholder:text-slate-400 dark:placeholder:text-gray-500
+                       transition-colors duration-300"
             />
 
             <button
                 @click="changePassword"
                 class="bg-gray-500 dark:bg-gray-700
-                     text-white px-6 py-3 rounded-xl
-                     hover:bg-gray-600 dark:hover:bg-gray-600
-                     transition"
+                       text-white px-6 py-3 rounded-xl
+                       hover:bg-gray-600 dark:hover:bg-gray-600
+                       transition"
             >
               Passwort ändern
             </button>
