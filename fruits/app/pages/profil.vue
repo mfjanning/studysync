@@ -31,34 +31,29 @@ const saveAvatar = async () => {
   }
 
   const avatarName = selectedAvatar.value.split("/").pop()?.replace(".png", "")
-  const { error } = await supabase
-    .from("profile")
-    .update({ avatar: avatarName } ) 
-    .eq("id", user.value.id)
+  try {
+    const result = await $fetch('/api/profile/avatar', {
+      method: 'POST',
+      body: {
+        avatar: avatarName
+      }
+    })
 
-  if (error) {
-    errorMessage.value = "Profilbild konnte nicht gespeichert werden."
-    console.error(error)
-    return
-  }
-
-  currentAvatar.value = selectedAvatar.value
+  currentAvatar.value = `/avatars/${avatarName}.png`
+  console.log(currentAvatar.value)
   message.value = "Profilbild wurde gespeichert."
+} catch (error: any) {
+  console.error('Avatar Update Error:', error)
+  errorMessage.value = error.data?.statusMessage || "Profilbild konnte nicht gespeichert werden."
+}
 }
 
 onMounted(async () => {
-
-  if (!user.value) 
-    console.log("kein user")
-  return
-  const { data, error } = await supabase
-    .from("profile")
-    .select("avatar")
-    .eq("id", user.value.id)
-    .single()
-
-  if (data?.avatar) {
-    currentAvatar.value = `/avatars/${data.avatar}.png`
+  try {
+    const res = await $fetch('/api/profile/avatar')
+    currentAvatar.value = `/avatars/${res.avatar}.png`
+  } catch (e) {
+    console.error("Avatar Load Error:", e)
   }
 })
 
