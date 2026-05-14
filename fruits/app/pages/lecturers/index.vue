@@ -75,7 +75,7 @@ const filteredDozenten = computed(() => {
       />
 
       <!-- Dozentenliste scrollbar machen, damit Footer sichtbar ist -->
-      <ul class="max-h-[45vh] overflow-y-auto pr-2 pt-2 pb-2 space-y-4">
+      <ul class="max-h-[70vh] overflow-y-auto pr-2 pt-2 pb-2 space-y-4">
         
         <!-- Hinweis, wenn keine Dozenten gefunden wurden -->
         <div 

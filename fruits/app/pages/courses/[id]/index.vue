@@ -40,7 +40,7 @@ const publicUrlBase = publicUrl.endsWith('/') ? publicUrl : publicUrl + '/'
 
 // 3. Tab-Steuerung
 const aktiverTab = ref('Altklausuren')
-const tabs = ['Altklausuren', 'Lösungen', 'Mitschriften', 'Alle Ressourcen']
+const tabs = ['Altklausuren', 'Karteikarten', 'Mitschriften', 'Alle Ressourcen']
 
 // --- Steuerung für die Bewertungs-Popups ---
 const zeigeKursBewertung = ref(false)
@@ -231,13 +231,13 @@ const toggleAbo = async () => {
       </div>
 
       <!-- HEADER -->
-      <header class="rounded-[2.5rem] bg-gradient-to-br from-green-400 to-blue-600 dark:from-green-700 dark:to-blue-900 p-10 shadow-lg shadow-blue-900/10 dark:shadow-black/50 mb-8 relative overflow-hidden">
+      <header class="rounded-[2.5rem] bg-gradient-to-br from-green-400 to-blue-600 dark:from-green-700 dark:to-blue-900 p-6 shadow-lg shadow-blue-900/10 dark:shadow-black/50 mb-8 relative overflow-hidden text-center">
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
 
         <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight text-white relative z-10">
           {{ modulDaten.name }}
         </h1>
-        <p class="mt-4 text-lg text-green-50 dark:text-gray-200 max-w-3xl relative z-10 font-medium leading-relaxed">
+        <p class="mt-4 text-lg text-green-50 dark:text-gray-200 max-w-none mx-auto relative z-10 font-medium leading-relaxed">
           {{ modulDaten.beschreibung }}
         </p>
       </header>
@@ -280,7 +280,8 @@ const toggleAbo = async () => {
                 </button>
               </div>
 
-              <div class="space-y-4">
+              <!--Container, unter der alle Dateien liegen inkl Scrollbar -->
+              <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                 <div
                     v-if="sortierteMaterialien.length === 0"
                     class="p-8 text-center text-slate-400 dark:text-gray-400 font-medium bg-slate-50 dark:bg-gray-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-gray-700 transition-colors duration-300"

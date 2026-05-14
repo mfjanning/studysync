@@ -1,11 +1,12 @@
 <template>
-  <div class="flex min-h-screen flex-col bg-white dark:bg-black transition-colors duration-300">
+  <div class="flex min-h-screen flex-col bg-slate-50 dark:bg-black transition-colors duration-300">
     <NavBar />
 
-    <main class="flex-grow">
+    <!-- pb-10 wichtig wegen fixed Footer -->
+    <main class="flex-grow bg-slate-50 dark:bg-black">
       <NuxtPage />
     </main>
 
-    <Startseite />
+    <Footer />
   </div>
 </template>

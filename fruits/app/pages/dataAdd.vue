@@ -10,7 +10,7 @@ const route = useRoute();
 // Formulardaten
 const selectedKurs = ref(null);
 const selectedTyp = ref('altklausur');
-const selectedSemester = ref('Sommersemester'); 
+const selectedSemester = ref('Sommersemester');
 const selectedJahr = ref(''); // Speichert nun ein volles Jahr (z.B. 2025)
 const selectedFile = ref(null);
 
@@ -57,13 +57,19 @@ async function uploadFile() {
 
     uploadStatus.value = 'success';
     uploadMessage.value = `Upload erfolgreich! Danke für das Teilen.`;
-    
-    // Formular zurücksetzen (Kurs bleibt ausgewählt für weitere Uploads)
+
+    // Formular vollständig zurücksetzen
+    selectedKurs.value = null;
     selectedTyp.value = 'altklausur';
+    selectedSemester.value = 'Sommersemester';
     selectedJahr.value = '';
     selectedFile.value = null;
-    if (document.getElementById('fileUpload')) {
-      document.getElementById('fileUpload').value = '';
+
+    // File-Input visuell zurücksetzen
+    const fileInput = document.getElementById('file');
+
+    if (fileInput) {
+      fileInput.value = '';
     }
 
   } catch (error) {
@@ -77,27 +83,27 @@ async function uploadFile() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 font-sans text-slate-800 pb-12">
-    <div class="max-w-4xl mx-auto p-4 md:p-8">
+  <div class="h-[calc(100vh-140px)] bg-slate-50 dark:bg-black font-sans text-slate-800 dark:text-gray-100 transition-colors duration-300 overflow-hidden">
+    <div class="max-w-4xl mx-auto p-4 md:p-6 h-full overflow-y-auto">
 
       <!-- HEADER -->
-      <header class="rounded-[2.5rem] bg-gradient-to-br from-green-400 to-blue-600 p-10 shadow-lg shadow-blue-900/10 mb-8 relative overflow-hidden">
+      <header class="rounded-[2rem] bg-gradient-to-br from-green-400 to-blue-600 dark:from-green-700 dark:to-blue-900 p-4 shadow-lg shadow-blue-900/10 dark:shadow-black/50 mb-2 relative overflow-hidden">
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
-        
+
         <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight text-white relative z-10">
           Datei hochladen
         </h1>
 
-        <p class="mt-4 text-lg text-green-50 relative z-10 font-medium">
+        <p class="mt-4 text-lg text-green-50 dark:text-gray-200 relative z-10 font-medium">
           Teile deine Materialien mit anderen Studierenden
         </p>
       </header>
 
       <!-- FORM CARD -->
-      <section class="bg-white rounded-[2rem] shadow-xl shadow-green-900/5 border border-green-50 overflow-hidden">
-        <div class="p-8">
+      <section class="bg-white dark:bg-gray-900 rounded-[2rem] shadow-xl shadow-green-900/5 dark:shadow-black/40 border border-green-50 dark:border-gray-700 overflow-hidden transition-colors duration-300">
+        <div class="p-4 md:p-6">
 
-          <form @submit.prevent="uploadFile" class="space-y-6">
+          <form @submit.prevent="uploadFile" class="space-y-3 md:space-y-4">
 
             <!-- KURS -->
             <div>
@@ -105,19 +111,28 @@ async function uploadFile() {
                 Kurs
               </label>
 
-              <select 
-                v-model="selectedKurs"
-                class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
-                required
+              <select
+                  v-model="selectedKurs"
+                  class="w-full p-4 rounded-xl border border-slate-200 dark:border-gray-700
+                        bg-slate-50 dark:bg-gray-800
+                        text-slate-800 dark:text-gray-100
+                        focus:outline-none focus:ring-2 focus:ring-green-400
+                        transition-colors duration-300"
+                  required
               >
-                <option :value="null" disabled>
+                <option
+                    class="bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100"
+                    :value="null"
+                    disabled
+                >
                   {{ pending ? 'Lade Kurse...' : 'Bitte einen Kurs wählen...' }}
                 </option>
 
-                <option 
-                  v-for="course in kurseData?.courses" 
-                  :key="course.id" 
-                  :value="course.id"
+                <option
+                    v-for="course in kurseData?.courses"
+                    :key="course.id"
+                    :value="course.id"
+                    class="bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100"
                 >
                   {{ course.name }}
                 </option>
@@ -134,31 +149,67 @@ async function uploadFile() {
                 Typ
               </label>
 
-              <select 
-                v-model="selectedTyp"
-                class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                required
+              <select
+                  v-model="selectedTyp"
+                  class="w-full p-4 rounded-xl border border-slate-200 dark:border-gray-700
+                  bg-slate-50 dark:bg-gray-800
+                  text-slate-800 dark:text-gray-100
+                  focus:outline-none focus:ring-2 focus:ring-green-400
+                  transition-colors duration-300"
+                  required
               >
-                <option value="altklausur">Altklausuren</option>
-                <option value="loesung">Aufgabenlösungen</option>
-                <option value="mitschrift">Mitschriften</option>
+                <option
+                    value="altklausur"
+                    class="bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100"
+                >
+                  Altklausuren
+                </option>
+
+                <option
+                    value="loesung"
+                    class="bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100"
+                >
+                  Karteikarten
+                </option>
+
+                <option
+                    value="mitschrift"
+                    class="bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100"
+                >
+                  Mitschriften
+                </option>
               </select>
             </div>
 
             <!-- SEMESTER & JAHR (NEU) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               <!-- Semester -->
               <div>
                 <label class="block text-sm font-bold text-slate-600 mb-2">
                   Semester
                 </label>
-                <select 
-                  v-model="selectedSemester"
-                  class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                  required
+                <select
+                    v-model="selectedSemester"
+                    class="w-full p-4 rounded-xl border border-slate-200 dark:border-gray-700
+                    bg-slate-50 dark:bg-gray-800
+                    text-slate-800 dark:text-gray-100
+                    focus:outline-none focus:ring-2 focus:ring-green-400
+                    transition-colors duration-300"
+                    required
                 >
-                  <option value="Sommersemester">Sommersemester (SoSe)</option>
-                  <option value="Wintersemester">Wintersemester (WiSe)</option>
+                  <option
+                      value="Sommersemester"
+                      class="bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100"
+                  >
+                    Sommersemester (SoSe)
+                  </option>
+
+                  <option
+                      value="Wintersemester"
+                      class="bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100"
+                  >
+                    Wintersemester (WiSe)
+                  </option>
                 </select>
               </div>
 
@@ -167,45 +218,67 @@ async function uploadFile() {
                 <label class="block text-sm font-bold text-slate-600 mb-2">
                   Jahr
                 </label>
-                <input 
-                  type="number" 
-                  v-model="selectedJahr" 
-                  placeholder="z.B. 2025"
-                  min="1990"
-                  max="2100"
-                  step="1"
-                  class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                  required 
+                <input
+                    type="number"
+                    v-model="selectedJahr"
+                    placeholder="z.B. 2025"
+                    min="1990"
+                    max="2100"
+                    step="1"
+                    class="w-full p-4 rounded-xl border border-slate-200 dark:border-gray-700
+                    bg-slate-50 dark:bg-gray-800
+                    text-slate-800 dark:text-gray-100
+                    placeholder:text-slate-400 dark:placeholder:text-gray-500
+                    focus:outline-none focus:ring-2 focus:ring-green-400
+                    transition-colors duration-300"
+                    required
                 />
               </div>
             </div>
 
             <!-- FILE -->
             <div>
-              <label class="block text-sm font-bold text-slate-600 mb-2">
+              <label class="block text-sm font-bold text-slate-600 dark:text-gray-300 mb-2">
                 Datei auswählen
               </label>
 
-              <input 
-                type="file" 
-                id="file" 
-                @change="handleFileChange"
-                class="w-full p-3 rounded-xl border border-slate-200 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-gradient-to-r file:from-green-500 file:to-blue-500 file:text-white file:font-bold hover:file:opacity-90 transition"
-                required
+              <input
+                  type="file"
+                  id="file"
+                  @change="handleFileChange"
+                  class="w-full p-3 rounded-xl
+                  border border-slate-200 dark:border-gray-700
+                  bg-white dark:bg-gray-800
+                  text-slate-800 dark:text-gray-100
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:bg-gradient-to-r file:from-green-500 file:to-blue-500
+                  file:text-white file:font-bold
+                  hover:file:opacity-90
+                  transition-colors duration-300"
+                  required
               >
             </div>
 
             <!-- BUTTON -->
-            <button 
-              type="submit" 
-              :disabled="isUploading"
-              class="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-4 rounded-full transition-all transform hover:-translate-y-1 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            <button
+                type="submit"
+                :disabled="isUploading"
+                class="w-full bg-gradient-to-r
+                from-green-500 to-blue-500
+                hover:from-green-400 hover:to-blue-400
+                dark:from-green-600 dark:to-blue-700
+                dark:hover:from-green-500 dark:hover:to-blue-600
+                text-white font-bold py-2 rounded-full
+                transition-all transform hover:-translate-y-1
+                shadow-md dark:shadow-black/40
+                disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ isUploading ? 'Lade hoch...' : 'Hochladen' }}
             </button>
 
             <!-- MESSAGE -->
-            <p 
+            <p
               v-if="uploadMessage"
               :class="[
                 'text-sm font-semibold mt-2 text-center',

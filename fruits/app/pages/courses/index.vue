@@ -31,9 +31,10 @@ const filteredCourses = computed(() => {
     Darkmode: schwarzer Hintergrund
   -->
   <div
-      class="min-h-[calc(100vh-260px)] bg-slate-50 dark:bg-black
+      class="bg-slate-50 dark:bg-black
          font-sans text-slate-800 dark:text-gray-100
-         p-6 md:p-12 transition-colors duration-300
+         px-6 pt-6 pb-0 md:px-12 md:pt-12 md:pb-0
+         transition-colors duration-300
          overflow-hidden"
   >
     <div class="max-w-4xl mx-auto">
@@ -63,7 +64,7 @@ const filteredCourses = computed(() => {
       />
 
       <!-- Kursliste scrollbar machen, damit Footer sichtbar ist -->
-      <ul class="max-h-[45vh] overflow-y-auto pr-2 pt-2 pb-2 space-y-4">
+      <ul class="max-h-[55vh] overflow-y-auto pr-2 pt-2 pb-2 space-y-4">
         <li
             v-for="course in filteredCourses"
             :key="course.id"
