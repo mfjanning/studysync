@@ -6,7 +6,8 @@ const forumId = route.params.forumId
 const { data: beitragData } = await useFetch('/api/dozenten/foren/beitrag/' + forumId)
 const { data: kommentarData, refresh: refreshKommentare } = await useFetch('/api/dozenten/foren/kommentare/' + forumId)
 
-const user = useSupabaseUser()
+const session = useSupabaseSession()
+const user = computed(() => session.value?.user ?? null)
 
 const beitrag = computed(() => beitragData.value?.beitrag)
 const kommentare = computed(() => kommentarData.value?.beitraege ?? [])
@@ -14,6 +15,31 @@ const kommentare = computed(() => kommentarData.value?.beitraege ?? [])
 const neuerKommentar = ref('')
 const sendet = ref(false)
 const fehler = ref('')
+
+const loeschtKommentarId = ref(null)
+const loeschFehler = ref('')
+const zeigeLoeschDialog = ref(false)
+const zuLoeschendenKommentarId = ref(null)
+
+const kommentarLoeschen = (id) => {
+  zuLoeschendenKommentarId.value = id
+  zeigeLoeschDialog.value = true
+}
+
+const loeschenBestaetigen = async () => {
+  loeschtKommentarId.value = zuLoeschendenKommentarId.value
+  loeschFehler.value = ''
+  try {
+    await $fetch(`/api/dozenten/foren/kommentare/${zuLoeschendenKommentarId.value}`, { method: 'DELETE' })
+    zeigeLoeschDialog.value = false
+    await refreshKommentare()
+  } catch (err) {
+    loeschFehler.value = err?.data?.message || 'Kommentar konnte nicht gelöscht werden.'
+  } finally {
+    loeschtKommentarId.value = null
+    zuLoeschendenKommentarId.value = null
+  }
+}
 
 const kommentarAbsenden = async () => {
   if (!neuerKommentar.value.trim()) return
@@ -118,7 +144,18 @@ const kommentarAbsenden = async () => {
                   hour: '2-digit', minute: '2-digit'
                 }) }}
               </span>
+              <button
+                v-if="user?.id === k.nutzerID"
+                @click="kommentarLoeschen(k.id)"
+                :disabled="loeschtKommentarId === k.id"
+                class="text-slate-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-40 transition-colors text-xs font-bold leading-none"
+                title="Kommentar löschen"
+              >
+                <span v-if="loeschtKommentarId === k.id">...</span>
+                <span v-else>✕</span>
+              </button>
             </div>
+            <p v-if="loeschFehler" class="text-red-500 text-xs font-medium mb-1 pl-11">{{ loeschFehler }}</p>
             <p class="text-sm text-slate-700 dark:text-gray-200 leading-relaxed pl-11" style="overflow-wrap:anywhere;">{{ k.kommentar }}</p>
           </div>
         </div>
@@ -163,4 +200,13 @@ const kommentarAbsenden = async () => {
       </div>
     </div>
   </div>
+
+  <ConfirmDialog
+    v-if="zeigeLoeschDialog"
+    nachricht="Möchtest du diesen Kommentar wirklich löschen?"
+    :laedt="loeschtKommentarId !== null"
+    @bestaetigen="loeschenBestaetigen"
+    @abbrechen="zeigeLoeschDialog = false; zuLoeschendenKommentarId = null"
+  />
+
 </template>

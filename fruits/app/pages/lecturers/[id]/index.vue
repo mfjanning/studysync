@@ -3,14 +3,40 @@ import { ref } from 'vue'
 
 const route = useRoute()
 
-// NEU: 'refresh: refreshLecturer' hinzugefügt, um die Daten nach der Bewertung stumm neu zu laden
 const { data: lecturer, refresh: refreshLecturer } = await useFetch('/api/dozenten/' + route.params.id)
 const { data: forums, refresh: refreshForums } = await useFetch('/api/dozenten/foren/' + route.params.id)
 
-const user = useSupabaseUser()
+const session = useSupabaseSession()
+const user = computed(() => session.value?.user ?? null)
+
 const neuesDiskussionsThema = ref('')
 const postet = ref(false)
 const postFehler = ref('')
+const loeschFehler = ref('') 
+const bewertungsFehler = ref('')
+const loeschtBeitragId = ref(null)
+const zeigeLoeschDialog = ref(false)
+const zuLoeschendeBeitragId = ref(null)
+
+const beitragLoeschen = (id) => {
+  zuLoeschendeBeitragId.value = id
+  zeigeLoeschDialog.value = true
+}
+
+const loeschenBestaetigen = async () => {
+  loeschtBeitragId.value = zuLoeschendeBeitragId.value
+  loeschFehler.value = ''
+  try {
+    await $fetch(`/api/dozenten/foren/beitrag/${zuLoeschendeBeitragId.value}`, { method: 'DELETE' })
+    zeigeLoeschDialog.value = false
+    await refreshForums()
+  } catch (err) {
+    loeschFehler.value = err?.data?.message || 'Beitrag konnte nicht gelöscht werden.'
+  } finally {
+    loeschtBeitragId.value = null
+    zuLoeschendeBeitragId.value = null
+  }
+}
 
 const diskussionPosten = async () => {
   if (!neuesDiskussionsThema.value.trim()) return
@@ -30,18 +56,41 @@ const diskussionPosten = async () => {
   }
 }
 
-// NEU: Steuerung für das Bewertungs-Pop-up
+// Steuerung für die Bewertungs-Popups
 const zeigeDozentBewertung = ref(false)
-
 const zeigeKursBewertung = ref(false)
 const zuBewertendenKursId = ref(null)
-const kursBewertungsFehler = ref('')
 
-const kursBewertungStarten = async (kursId) => {
-  kursBewertungsFehler.value = ''
+// Dozentenbewertung starten
+const dozentBewertungStarten = async () => {
+  bewertungsFehler.value = ''
 
   if (!user.value) {
-    kursBewertungsFehler.value = 'Du musst angemeldet sein, um eine Bewertung abzugeben.'
+    bewertungsFehler.value = 'Du musst angemeldet sein, um eine Bewertung abzugeben.'
+    return
+  }
+
+  try {
+    const { alreadyRated } = await $fetch(`/api/dozenten/bewertung/check?dozentID=${route.params.id}`)
+
+    if (alreadyRated) {
+      bewertungsFehler.value = 'Du hast diesen Dozenten bereits bewertet.'
+      return
+    }
+
+    zeigeDozentBewertung.value = true
+  } catch (error) {
+    console.error('Fehler beim Prüfen der Dozentenbewertung:', error)
+    bewertungsFehler.value = 'Bewertung konnte nicht geprüft werden.'
+  }
+}
+
+// Kursbewertung starten
+const kursBewertungStarten = async (kursId) => {
+  bewertungsFehler.value = ''
+
+  if (!user.value) {
+    bewertungsFehler.value = 'Du musst angemeldet sein, um eine Bewertung abzugeben.'
     return
   }
 
@@ -49,7 +98,7 @@ const kursBewertungStarten = async (kursId) => {
     const { alreadyRated } = await $fetch(`/api/kurse/bewertung/check?kursID=${kursId}`)
 
     if (alreadyRated) {
-      kursBewertungsFehler.value = 'Du hast diesen Kurs bereits bewertet.'
+      bewertungsFehler.value = 'Du hast diesen Kurs bereits bewertet.'
       return
     }
 
@@ -57,7 +106,7 @@ const kursBewertungStarten = async (kursId) => {
     zeigeKursBewertung.value = true
   } catch (error) {
     console.error('Fehler beim Prüfen der Kursbewertung:', error)
-    kursBewertungsFehler.value = 'Bewertung konnte nicht geprüft werden.'
+    bewertungsFehler.value = 'Bewertung konnte nicht geprüft werden.'
   }
 }
 
@@ -65,7 +114,6 @@ const datenNeuLaden = async () => {
   await refreshLecturer()
 }
 
-// Sterne-Funktion (wie auf der Kurs-Seite)
 const generiereSterne = (wert) => {
   if (!wert || isNaN(wert)) return '☆☆☆☆☆';
   const gerundet = Math.round(wert);
@@ -83,14 +131,14 @@ const truncateText = (text, maxLength = 200) => {
   <div class="min-h-screen bg-slate-50 dark:bg-black font-sans text-slate-800 dark:text-gray-100 pb-12 transition-colors duration-300">
     <div class="max-w-7xl mx-auto p-4 md:p-8">
 
-      <!-- NEU: Zurück-Link -->
+      <!-- Zurück-Link -->
       <div class="mb-6 pl-2">
         <NuxtLink to="/lecturers" class="inline-flex items-center text-green-600 dark:text-green-400 hover:text-blue-700 dark:hover:text-blue-400 font-bold transition-colors">
           <span class="mr-2 text-2xl leading-none">&larr;</span> Zurück zur Dozentenübersicht
         </NuxtLink>
       </div>
 
-      <!-- HEADER -->
+      <!-- Header -->
       <header class="rounded-[2.5rem] bg-gradient-to-br from-green-400 to-blue-600 dark:from-green-700 dark:to-blue-900 p-10 shadow-lg shadow-blue-900/10 dark:shadow-black/50 mb-8 relative overflow-hidden">
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
 
@@ -117,7 +165,6 @@ const truncateText = (text, maxLength = 200) => {
               </h2>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                 <div class="bg-slate-50 dark:bg-gray-800 p-5 rounded-2xl transition-colors duration-300">
                   <p class="text-sm text-slate-400 dark:text-gray-500 font-bold">Verständlichkeit</p>
                   <div class="text-amber-400 text-lg my-1">
@@ -157,7 +204,6 @@ const truncateText = (text, maxLength = 200) => {
                     {{ lecturer?.bewertungen?.freundlichkeit || '-' }}
                   </p>
                 </div>
-
               </div>
 
               <!-- GESAMT -->
@@ -170,9 +216,8 @@ const truncateText = (text, maxLength = 200) => {
                   {{ lecturer?.bewertungen?.gesamtbewertung || 'Keine Bewertung' }}
                 </p>
 
-                <!-- NEU: Bewerten-Button -->
                 <button 
-                  @click="zeigeDozentBewertung = true" 
+                  @click="dozentBewertungStarten()" 
                   class="w-full max-w-sm bg-slate-50 dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-bold py-3 rounded-xl transition-colors border border-slate-100 dark:border-gray-700">
                   Dozent bewerten
                 </button>
@@ -181,19 +226,19 @@ const truncateText = (text, maxLength = 200) => {
             </div>
           </section>
 
+          <!-- ZENTRALE FEHLERMELDUNG -->
+          <div v-if="bewertungsFehler" class="mb-4">
+            <p class="text-sm font-semibold text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+              {{ bewertungsFehler }}
+            </p>
+          </div>
+
           <!-- KURSE -->
           <section class="bg-white dark:bg-gray-900 rounded-[2rem] shadow-xl shadow-blue-900/5 dark:shadow-black/40 border border-slate-100 dark:border-gray-700 transition-colors duration-300">
             <div class="p-8">
               <h2 class="text-xl font-extrabold text-slate-700 dark:text-gray-100 uppercase tracking-widest mb-4">
                 Unterrichtete Kurse
               </h2>
-
-              <!-- Fehlermeldung -->
-              <div v-if="kursBewertungsFehler" class="mb-4">
-                <p class="text-sm font-semibold text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
-                  {{ kursBewertungsFehler }}
-                </p>
-              </div>
 
               <div class="flex flex-col gap-3">
 
@@ -206,7 +251,6 @@ const truncateText = (text, maxLength = 200) => {
                   :key="kurs.id"
                   class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-800 rounded-xl border border-transparent dark:border-gray-700 hover:border-green-100 dark:hover:border-green-500 transition-colors"
                 >
-                  <!-- Name + Sterne -->
                   <NuxtLink
                     :to="`/courses/${kurs.id}`"
                     class="flex flex-col gap-1 flex-1 min-w-0"
@@ -226,7 +270,6 @@ const truncateText = (text, maxLength = 200) => {
                     </div>
                   </NuxtLink>
 
-                  <!-- Bewerten-Button -->
                   <button
                     @click="kursBewertungStarten(kurs.id)"
                     class="ml-4 flex-shrink-0 bg-white dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold py-2 px-4 rounded-xl text-xs transition-colors border border-slate-100 dark:border-gray-700"
@@ -253,23 +296,41 @@ const truncateText = (text, maxLength = 200) => {
             <div v-if="!forums?.beitraege?.length" class="text-center py-4 text-slate-400 dark:text-gray-500 text-sm">
               Noch keine Diskussionen.
             </div>
-            <NuxtLink
+
+            <p v-if="loeschFehler" class="text-red-500 text-xs font-medium">{{ loeschFehler }}</p>
+
+            <div
               v-for="(item, index) in forums?.beitraege"
               :key="item.id"
-              :to="`/lecturers/${route.params.id}/${item.id}`"
-              :class="['block group', index > 0 ? 'border-t border-slate-100 dark:border-gray-700 pt-4' : '']"
+              :class="[index > 0 ? 'border-t border-slate-100 dark:border-gray-700 pt-4' : '']"
             >
-              <div class="flex items-start justify-between gap-2 mb-2">
-                <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" style="overflow-wrap:anywhere;">
-                  {{ truncateText(item.thema) }}
-                </p>
-                <span
-                  v-if="item.kommentar_dozent?.[0]?.count > 0"
-                  class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-blue-500 mt-1"
-                  title="Wurde beantwortet"
-                ></span>
+              <!-- Zeile 1: Titel + ✕ -->
+              <div class="flex items-start gap-2 mb-2">
+                <NuxtLink
+                  :to="`/lecturers/${route.params.id}/${item.id}`"
+                  class="flex-1 min-w-0 group"
+                >
+                  <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" style="overflow-wrap:anywhere;">
+                    {{ truncateText(item.thema) }}
+                  </p>
+                </NuxtLink>
+                <button
+                  v-if="user?.id === item.nutzerID"
+                  @click="beitragLoeschen(item.id)"
+                  :disabled="loeschtBeitragId === item.id"
+                  class="flex-shrink-0 text-slate-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-40 transition-colors text-xs font-bold leading-none mt-0.5"
+                  title="Beitrag löschen"
+                >
+                  <span v-if="loeschtBeitragId === item.id">...</span>
+                  <span v-else>✕</span>
+                </button>
               </div>
-              <div class="flex items-center gap-2">
+
+              <!-- Zeile 2: Avatar + Name + blauer Punkt -->
+              <NuxtLink
+                :to="`/lecturers/${route.params.id}/${item.id}`"
+                class="flex items-center gap-2"
+              >
                 <img
                   v-if="item.profile?.avatar"
                   :src="`/avatars/${item.profile.avatar}.png`"
@@ -279,12 +340,17 @@ const truncateText = (text, maxLength = 200) => {
                 <div v-else class="w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0 text-white text-[10px] font-black">
                   {{ (item.profile?.name || 'N')[0].toUpperCase() }}
                 </div>
-                <p class="text-xs font-medium text-slate-400 dark:text-gray-500">
+                <p class="text-xs font-medium text-slate-400 dark:text-gray-500 flex-1">
                   {{ item.profile?.name || 'Nutzer' }} ·
                   {{ new Date(item.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) }}
                 </p>
-              </div>
-            </NuxtLink>
+                <span
+                  v-if="item.kommentar_dozent?.[0]?.count > 0"
+                  class="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"
+                  title="Wurde beantwortet"
+                ></span>
+              </NuxtLink>
+            </div>
           </div>
 
           <!-- Eingabe -->
@@ -330,20 +396,28 @@ const truncateText = (text, maxLength = 200) => {
     </div>
   </div>
 
-  <!-- NEU: MODAL: Dozent bewerten -->
+  <!-- Modals -->
   <div v-if="zeigeDozentBewertung" class="fixed inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <BewertungProf 
       :dozentId="route.params.id" 
-      @abbrechen="zeigeDozentBewertung = false" 
-      @gespeichert="zeigeDozentBewertung = false; datenNeuLaden()" 
+      @abbrechen="zeigeDozentBewertung = false; bewertungsFehler = ''" 
+      @gespeichert="zeigeDozentBewertung = false; bewertungsFehler = ''; datenNeuLaden()" 
     />
   </div>
-  <div v-if="zeigeKursBewertung" class="fixed inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-  <BewertungKurs
-    :kursId="zuBewertendenKursId"
-    @abbrechen="zeigeKursBewertung = false"
-    @gespeichert="zeigeKursBewertung = false; datenNeuLaden()"
-  />
-</div>
 
+  <div v-if="zeigeKursBewertung" class="fixed inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <BewertungKurs
+      :kursId="zuBewertendenKursId"
+      @abbrechen="zeigeKursBewertung = false; bewertungsFehler = ''"
+      @gespeichert="zeigeKursBewertung = false; bewertungsFehler = ''; datenNeuLaden()"
+    />
+  </div>
+
+  <ConfirmDialog
+    v-if="zeigeLoeschDialog"
+    nachricht="Möchtest du diesen Beitrag wirklich löschen?"
+    :laedt="loeschtBeitragId !== null"
+    @bestaetigen="loeschenBestaetigen"
+    @abbrechen="zeigeLoeschDialog = false; zuLoeschendeBeitragId = null"
+  />
 </template>

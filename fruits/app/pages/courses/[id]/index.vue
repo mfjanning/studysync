@@ -22,10 +22,19 @@ const bewertungsKriterien = computed(() => {
   ]
 })
 
-const user = useSupabaseUser()
+const session = useSupabaseSession()
+const user = computed(() => session.value?.user ?? null)
 const neuesDiskussionsThema = ref('')
 const postet = ref(false)
-const postFehler = ref('')
+const postFehler = ref('')  
+const loeschtBeitragId = ref(null)
+const loeschFehler = ref('')
+const zeigeLoeschDialog = ref(false)
+const zuLoeschendeBeitragId = ref(null)
+const loeschtDateiId = ref(null)
+const loeschDateiFehler = ref('')
+const zeigeLoeschDialogDatei = ref(false)
+const zuLoeschendeDateiId = ref(null)
 
 const diskussionPosten = async () => {
   if (!neuesDiskussionsThema.value.trim()) return
@@ -42,6 +51,47 @@ const diskussionPosten = async () => {
     postFehler.value = err?.data?.message || err?.message || 'Beitrag konnte nicht gespeichert werden.'
   } finally {
     postet.value = false
+  }
+}
+
+const beitragLoeschen = (id) => {
+  zuLoeschendeBeitragId.value = id
+  zeigeLoeschDialog.value = true
+}
+
+const loeschenBestaetigen = async () => {
+  loeschtBeitragId.value = zuLoeschendeBeitragId.value
+  loeschFehler.value = ''
+  try {
+    await $fetch(`/api/kurse/foren/beitrag/${zuLoeschendeBeitragId.value}`, { method: 'DELETE' })
+    zeigeLoeschDialog.value = false
+    await refreshForums()
+  } catch (err) {
+    loeschFehler.value = err?.data?.message || 'Beitrag konnte nicht gelöscht werden.'
+  } finally {
+    loeschtBeitragId.value = null
+    zuLoeschendeBeitragId.value = null
+  }
+}
+
+  const dateiLoeschen = (id) => {
+  console.log('dateiLoeschen aufgerufen mit id:', id)  // ← NEU
+  zuLoeschendeDateiId.value = id
+  zeigeLoeschDialogDatei.value = true
+}
+
+const dateiLoeschenBestaetigen = async () => {
+  loeschtDateiId.value = zuLoeschendeDateiId.value
+  loeschDateiFehler.value = ''
+  try {
+    await $fetch(`/api/dateien/${zuLoeschendeDateiId.value}`, { method: 'DELETE' })
+    zeigeLoeschDialogDatei.value = false
+    await refreshFiles()
+  } catch (err) {
+    loeschDateiFehler.value = err?.data?.message || 'Datei konnte nicht gelöscht werden.'
+  } finally {
+    loeschtDateiId.value = null
+    zuLoeschendeDateiId.value = null
   }
 }
 
@@ -197,6 +247,7 @@ const materialien = computed(() => {
   return files.value.dateien.map(item => {
     return {
       id: item.id,
+      nutzerID: item.nutzerID, 
       name: item.dateiname || item.dateipfad.split('/').pop(),
       typ: formatDateityp(item.typ),
       autor: item.profile?.name || 'Nutzer',
@@ -361,19 +412,21 @@ const toggleAbo = async () => {
               <!--Container, unter der alle Dateien liegen inkl Scrollbar -->
               <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                 <div
-                    v-if="sortierteMaterialien.length === 0"
-                    class="p-8 text-center text-slate-400 dark:text-gray-400 font-medium bg-slate-50 dark:bg-gray-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-gray-700 transition-colors duration-300"
+                  v-if="sortierteMaterialien.length === 0"
+                  class="p-8 text-center text-slate-400 dark:text-gray-400 font-medium bg-slate-50 dark:bg-gray-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-gray-700 transition-colors duration-300"
                 >
                   Noch keine Dateien in dieser Kategorie vorhanden.
                 </div>
 
+                <p v-if="loeschDateiFehler" class="text-red-500 text-xs font-medium">{{ loeschDateiFehler }}</p>
+
                 <div
-                    v-for="file in sortierteMaterialien" :key="file.id"
-                    class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl hover:bg-green-50 dark:hover:bg-gray-700 hover:border-green-100 dark:hover:border-green-500 transition-colors"
+                  v-for="file in sortierteMaterialien" :key="file.id"
+                  class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl hover:bg-green-50 dark:hover:bg-gray-700 hover:border-green-100 dark:hover:border-green-500 transition-colors"
                 >
                   <NuxtLink
-                      :to="`/courses/${urlId}/files/${file.id}`"
-                      class="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
+                    :to="`/courses/${urlId}/files/${file.id}`"
+                    class="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
                   >
                     <div class="w-12 h-12 flex items-center justify-center bg-white dark:bg-gray-900 text-green-500 dark:text-green-400 rounded-full shadow-sm text-xl flex-shrink-0">
                       📄
@@ -389,13 +442,27 @@ const toggleAbo = async () => {
                     </div>
                   </NuxtLink>
 
-                  <a
+                  <div class="flex items-center gap-1 flex-shrink-0 ml-4">
+                    <a
                       :href="file.urlDownload"
                       :download="file.name"
-                      class="ml-4 p-2 text-slate-400 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors flex-shrink-0"
-                      title="Herunterladen">
-                    📥
-                  </a>
+                      class="p-2 text-slate-400 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                      title="Herunterladen"
+                    >
+                      📥
+                    </a>
+                    <!-- NEU: Löschen-Button -->
+                    <button
+                      v-if="user?.id === file.nutzerID"
+                      @click="dateiLoeschen(file.id)"
+                      :disabled="loeschtDateiId === file.id"
+                      class="p-2 text-slate-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-40 transition-colors text-xs font-bold"
+                      title="Datei löschen"
+                    >
+                      <span v-if="loeschtDateiId === file.id">...</span>
+                      <span v-else>✕</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -531,43 +598,66 @@ const toggleAbo = async () => {
             <h2 class="font-extrabold text-slate-700 dark:text-gray-100 uppercase tracking-widest text-sm">Diskussionen</h2>
           </div>
 
-          <!-- Beiträge aus der Datenbank -->
+          <!-- Beitragsliste -->
           <div class="p-6 space-y-4 max-h-72 overflow-y-auto">
             <div v-if="!forums?.beitraege?.length" class="text-center py-4 text-slate-400 dark:text-gray-500 text-sm">
               Noch keine Diskussionen.
             </div>
-            <NuxtLink
-                v-for="(item, index) in forums?.beitraege"
-                :key="item.id"
-                :to="`/courses/${urlId}/${item.id}`"
-                :class="['block group', index > 0 ? 'border-t border-slate-100 dark:border-gray-700 pt-4' : '']"
+
+            <p v-if="loeschFehler" class="text-red-500 text-xs font-medium">{{ loeschFehler }}</p>
+
+            <div
+              v-for="(item, index) in forums?.beitraege"
+              :key="item.id"
+              :class="[index > 0 ? 'border-t border-slate-100 dark:border-gray-700 pt-4' : '']"
             >
-              <div class="flex items-start justify-between gap-2 mb-2">
-                <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" style="overflow-wrap:anywhere;" :title="item.thema">
-                  {{ truncateText(item.thema) }}
-                </p>
-                <span
-                    v-if="item.kommentar_kurs?.[0]?.count > 0"
-                    class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-blue-500 mt-1"
-                    title="Wurde beantwortet"
-                ></span>
+              <!-- Zeile 1: Titel + ✕ -->
+              <div class="flex items-start gap-2 mb-2">
+                <NuxtLink
+                  :to="`/courses/${urlId}/${item.id}`"
+                  class="flex-1 min-w-0 group"
+                >
+                  <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" style="overflow-wrap:anywhere;" :title="item.thema">
+                    {{ truncateText(item.thema) }}
+                  </p>
+                </NuxtLink>
+                <button
+                  v-if="user?.id === item.nutzerID"
+                  @click="beitragLoeschen(item.id)"
+                  :disabled="loeschtBeitragId === item.id"
+                  class="flex-shrink-0 text-slate-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-40 transition-colors text-xs font-bold leading-none mt-0.5"
+                  title="Beitrag löschen"
+                >
+                  <span v-if="loeschtBeitragId === item.id">...</span>
+                  <span v-else>✕</span>
+                </button>
               </div>
-              <div class="flex items-center gap-2">
+
+              <!-- Zeile 2: Avatar + Name + blauer Punkt -->
+              <NuxtLink
+                :to="`/courses/${urlId}/${item.id}`"
+                class="flex items-center gap-2"
+              >
                 <img
-                    v-if="item.profile?.avatar"
-                    :src="`/avatars/${item.profile.avatar}.png`"
-                    :alt="item.profile?.name || 'Nutzer'"
-                    class="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                  v-if="item.profile?.avatar"
+                  :src="`/avatars/${item.profile.avatar}.png`"
+                  :alt="item.profile?.name || 'Nutzer'"
+                  class="w-5 h-5 rounded-full object-cover flex-shrink-0"
                 />
                 <div v-else class="w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0 text-white text-[10px] font-black">
                   {{ (item.profile?.name || 'N')[0].toUpperCase() }}
                 </div>
-                <p class="text-xs font-medium text-slate-400 dark:text-gray-500">
+                <p class="text-xs font-medium text-slate-400 dark:text-gray-500 flex-1">
                   {{ item.profile?.name || 'Nutzer' }} ·
                   {{ new Date(item.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) }}
                 </p>
-              </div>
-            </NuxtLink>
+                <span
+                  v-if="item.kommentar_kurs?.[0]?.count > 0"
+                  class="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"
+                  title="Wurde beantwortet"
+                ></span>
+              </NuxtLink>
+            </div>
           </div>
 
           <!-- Eingabe nur für angemeldete Nutzer -->
@@ -630,4 +720,19 @@ const toggleAbo = async () => {
         @gespeichert="zeigeDozentBewertung = false; datenNeuLaden()"
     />
   </div>
+
+  <ConfirmDialog
+    v-if="zeigeLoeschDialog"
+    nachricht="Möchtest du diesen Beitrag wirklich löschen?"
+    :laedt="loeschtBeitragId !== null"
+    @bestaetigen="loeschenBestaetigen"
+    @abbrechen="zeigeLoeschDialog = false; zuLoeschendeBeitragId = null"
+  />
+  <ConfirmDialog
+    v-if="zeigeLoeschDialogDatei"
+    nachricht="Möchtest du diese Datei wirklich löschen?"
+    :laedt="loeschtDateiId !== null"
+    @bestaetigen="dateiLoeschenBestaetigen"
+    @abbrechen="zeigeLoeschDialogDatei = false; zuLoeschendeDateiId = null"
+  />
 </template>
