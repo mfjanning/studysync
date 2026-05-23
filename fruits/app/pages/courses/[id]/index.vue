@@ -53,7 +53,7 @@ const publicUrlBase = publicUrl.endsWith('/') ? publicUrl : publicUrl + '/'
 const aktiverTab = ref('Altklausuren')
 const tabs = ['Altklausuren', 'Karteikarten', 'Mitschriften', 'Alle Ressourcen']
 
-// --- Steuerung für die Bewertungs-Popups ---
+// Steuerung für die Bewertungs-Popups
 const zeigeKursBewertung = ref(false)
 const zeigeDozentBewertung = ref(false)
 const zuBewertendenDozentId = ref(null)
@@ -127,7 +127,7 @@ const datenNeuLaden = async () => {
   await refreshFiles()
 
   // Da kein Seiten-Reload stattfindet, bleibt der Darkmode-Status
-  // der Website (im HTML-Tag oder State) unangetastet!
+  // der Website unangetastet.
 }
 
 // 4. Daten zusammenstellen
@@ -211,7 +211,7 @@ const materialien = computed(() => {
   })
 })
 
-// --- SORTIERUNG DER DATEIEN ---
+// Sortierung der Dateien
 const sortierung = ref('neueste')
 
 const toggleSortierung = () => {
@@ -264,7 +264,7 @@ const truncateText = (text, maxLength = 200) => {
   return text.length > maxLength ? text.slice(0, maxLength).trimEnd() + '…' : text
 }
 
-// --- ABONNEMENT LOGIK ---
+// Abonnieren logik
 const { data: aboData, refresh: refreshAbos } = await useFetch("/api/bekommt-updates")
 
 const istAbonniert = computed(() => {
@@ -300,14 +300,14 @@ const toggleAbo = async () => {
   <div class="min-h-screen bg-slate-50 dark:bg-black font-sans text-slate-800 dark:text-gray-100 pb-20 transition-colors duration-300">
     <div class="max-w-7xl mx-auto p-4 md:p-8">
 
-      <!-- ZURÜCK-BUTTON -->
+      <!-- Zurück-Button -->
       <div class="mb-6 pl-2">
         <NuxtLink to="/courses" class="inline-flex items-center text-green-600 dark:text-green-400 hover:text-blue-700 dark:hover:text-blue-400 font-bold transition-colors">
           <span class="mr-2 text-2xl leading-none">&larr;</span> Zurück zur Kursübersicht
         </NuxtLink>
       </div>
 
-      <!-- HEADER -->
+      <!-- header -->
       <header class="rounded-[2.5rem] bg-gradient-to-br from-green-400 to-blue-600 dark:from-green-700 dark:to-blue-900 p-6 shadow-lg shadow-blue-900/10 dark:shadow-black/50 mb-8 relative overflow-hidden text-center">
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
 
@@ -323,7 +323,7 @@ const toggleAbo = async () => {
       <!-- Haupt-Grid-Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        <!-- LINKE SPALTE (Dateien & Kursinfos) -->
+        <!-- Linke Spalte (Dateien & Kursinfos) -->
         <div class="lg:col-span-2 space-y-8">
 
           <!-- Bereich: Dateien und Sortierung -->
@@ -336,7 +336,7 @@ const toggleAbo = async () => {
                 </button>
               </NuxtLink>
 
-              <!-- TABS UND SORTIER-BUTTON -->
+              <!-- Tabs und Sortier-Buttoon -->
               <div class="flex items-center justify-between border-b border-slate-100 dark:border-gray-700 mb-6 pb-2">
                 <div class="flex overflow-x-auto gap-4">
                   <button
@@ -406,14 +406,14 @@ const toggleAbo = async () => {
           <!-- Bereich: Bewertungen & Kurs-ID -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-          <!-- Zusammengefasste Bewertungskarte (2 Spalten) -->
+          <!-- Zusammengefasste Bewertungskarte -->
           <div class="md:col-span-2 flex flex-col bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-slate-100 dark:border-gray-700 shadow-lg shadow-blue-900/5 dark:shadow-black/40 hover:border-green-200 dark:hover:border-green-500 transition-colors">
 
             <p class="text-sm font-bold text-slate-400 dark:text-gray-500 mb-1">Kurs</p>
             <p class="font-bold text-slate-800 dark:text-gray-100 text-lg break-words whitespace-normal"
                style="overflow-wrap:anywhere; word-break:break-word;">{{ modulDaten.name }}</p>
 
-            <!-- Gesamtbewertung prominent -->
+            <!-- Gesamtbewertung-->
             <div class="flex items-center gap-3 my-3">
               <span class="text-amber-400 text-xl leading-none">{{ generiereSterne(modulDaten.bewertungModul) }}</span>
               <span class="text-sm font-semibold text-slate-500 dark:text-gray-400">
@@ -444,7 +444,7 @@ const toggleAbo = async () => {
             </button>
           </div>
 
-          <!-- Kurs-ID & Abonnieren (unverändert) -->
+          <!-- Kurs-ID & Abonnieren-->
           <div class="bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-[2rem] border border-green-100 dark:border-gray-700 shadow-lg shadow-blue-900/5 dark:shadow-black/40 flex flex-col items-center text-center transition-colors duration-300">
             <div class="my-auto">
               <p class="text-sm font-bold text-green-600 dark:text-green-500 mb-1 uppercase tracking-wider">Kurs-ID</p>
@@ -522,16 +522,16 @@ const toggleAbo = async () => {
           </div>
         </section>
 
-        </div> <!-- Ende LINKE SPALTE -->
+        </div> <!-- Ende Linke Spalte -->
 
-        <!-- RECHTE SPALTE (Diskussionen) -->
+        <!-- Rechte Spalte (Diskussionen) -->
         <aside class="bg-white dark:bg-gray-900 rounded-[2rem] shadow-xl shadow-green-900/5 dark:shadow-black/40 border border-slate-100 dark:border-gray-700 flex flex-col h-fit overflow-hidden transition-colors duration-300">
 
           <div class="p-6 bg-slate-50 dark:bg-gray-800 border-b border-slate-100 dark:border-gray-700 text-center transition-colors duration-300">
             <h2 class="font-extrabold text-slate-700 dark:text-gray-100 uppercase tracking-widest text-sm">Diskussionen</h2>
           </div>
 
-          <!-- Echte Beiträge aus der Datenbank -->
+          <!-- Beiträge aus der Datenbank -->
           <div class="p-6 space-y-4 max-h-72 overflow-y-auto">
             <div v-if="!forums?.beitraege?.length" class="text-center py-4 text-slate-400 dark:text-gray-500 text-sm">
               Noch keine Diskussionen.
@@ -607,7 +607,7 @@ const toggleAbo = async () => {
             </div>
           </div>
 
-        </aside> <!-- Ende RECHTE SPALTE -->
+        </aside> <!-- Ende Rechte Spalte -->
 
       </div> <!-- Ende Haupt-Grid-Layout -->
 

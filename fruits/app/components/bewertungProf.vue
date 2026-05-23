@@ -13,7 +13,7 @@ const emit = defineEmits(['gespeichert', 'abbrechen'])
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
-// Kriterien für Dozenten (manuell)
+// Kriterien für Dozenten
 const verstaendlichkeit = ref(3)
 const struktur = ref(3)
 const engagement = ref(3)
@@ -47,7 +47,7 @@ const speichern = async () => {
   if (error) {
     console.error("Fehler von Supabase:", error)
     
-    // NEU: Prüfung auf doppelten Eintrag
+    //Prüfung auf doppelten Eintrag
     if (error.code === '23505') {
       alert("Du hast diesen Dozenten bereits bewertet!")
     } else {
@@ -112,7 +112,7 @@ const speichern = async () => {
                class="w-full h-4 bg-slate-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-600 dark:accent-green-500">
       </div>
 
-      <!-- MANUELLE GESAMTBEWERTUNG -->
+      <!-- Gesamtbewertung -->
       <div class="pt-6 border-t border-slate-100 dark:border-gray-700">
         <label class="flex justify-between text-lg font-black text-slate-800 dark:text-gray-100 mb-3">
           <span>Gesamtbewertung</span>

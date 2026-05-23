@@ -3,7 +3,7 @@
     <!-- HAUPTLEISTE -->
     <div class="flex items-center justify-between px-6 md:px-12 py-4 w-full">
 
-      <!-- 1. LINKE SEITE (Nur Desktop) -->
+      <!--  Linke Seite (Nur Desktop) -->
       <ul class="hidden lg:flex items-center gap-8">
         <template v-if="user">
           <li>
@@ -33,12 +33,12 @@
         </template>
       </ul>
 
-      <!-- ERSATZ-LOGO FÜR DAS HANDY (Damit die Leiste links nicht leer ist) -->
+      <!-- LOGO FÜR DAS HANDY -->
       <div class="lg:hidden flex items-center">
         <span class="font-black text-xl text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-600">StudySync</span>
       </div>
 
-      <!-- 2. RECHTE SEITE BUTTONS (Nur Desktop) -->
+      <!--Rechte Seite Buttons (Nur Desktop) -->
       <div class="hidden lg:flex items-center gap-3">
         <button @click="spendenClick" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-white px-4 py-2 rounded-xl shadow-md shadow-orange-500/20 hover:shadow-lg hover:-translate-y-0.5 transition-all font-bold flex items-center gap-2">
           <span>🤍</span> Spenden
@@ -68,7 +68,7 @@
         </div>
       </div>
 
-      <!-- 3. HAMBURGER-MENÜ-KNOPF (Nur Handy) -->
+      <!-- Hamburger-Menü-Knopf (Nur Handy) -->
       <button @click="isMobileMenuOpen = !isMobileMenuOpen" class="lg:hidden p-2 text-slate-600 dark:text-gray-300 focus:outline-none">
         <span v-if="!isMobileMenuOpen" class="text-3xl leading-none">☰</span>
         <span v-else class="text-3xl leading-none">&times;</span>
@@ -76,7 +76,7 @@
 
     </div>
 
-    <!-- 4. DAS AUFKLAPPBARE HANDY-MENÜ -->
+    <!-- Handy-Menü (aufklappabr) -->
     <div v-if="isMobileMenuOpen" class="lg:hidden absolute top-full left-0 w-full bg-white dark:bg-black border-b border-slate-100 dark:border-gray-800 shadow-2xl flex flex-col px-6 py-6 transition-all duration-300">
       
       <template v-if="user">
@@ -128,7 +128,7 @@ const supabase = useSupabaseClient()
 // Speichert den aktuellen User
 const user = ref(null)
 
-// Steuert das Handy-Menü (auf / zu)
+// Steuert das Handy-Menü
 const isMobileMenuOpen = ref(false)
 
 // Startseite-Link

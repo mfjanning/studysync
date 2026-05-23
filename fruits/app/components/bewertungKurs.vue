@@ -31,10 +31,10 @@ const speichern = async () => {
   isLoading.value = true
 
   const { error } = await supabase
-      .from('bewertung_kurs') // <-- Richtige Tabelle für den Kurs
+      .from('bewertung_kurs')
       .insert({
         kursID: props.kursId,
-        nutzerID: user.value.sub,    // <-- HIER AUCH DIE LÖSUNG: .sub statt .id nutzen! (Warum?)
+        nutzerID: user.value.sub, 
         aufwand: aufwand.value,
         nutzen: nutzen.value,
         schwierigkeit: schwierigkeit.value,
@@ -47,7 +47,7 @@ const speichern = async () => {
   if (error) {
     console.error("Fehler von Supabase:", error)
     
-    // NEU: Prüfung auf doppelten Eintrag
+    //Prüfung auf doppelten Eintrag
     if (error.code === '23505') {
       alert("Du hast diesen Kurs bereits bewertet!")
     } else {
@@ -122,7 +122,7 @@ const speichern = async () => {
         >
       </div>
 
-      <!-- MANUELLE GESAMTBEWERTUNG -->
+      <!-- Gesamtbewertung -->
       <div class="pt-6 border-t border-slate-100 dark:border-gray-700">
         <label class="flex justify-between text-lg font-black text-slate-800 dark:text-gray-100 mb-3">
           <span>Gesamtbewertung </span>
