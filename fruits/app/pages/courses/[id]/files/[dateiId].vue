@@ -6,7 +6,8 @@ const dateiId = route.params.dateiId
 const { data } = await useFetch('/api/datei/' + dateiId)
 const { data: kommentarData, refresh: refreshKommentare } = await useFetch('/api/datei/kommentare/' + dateiId)
 
-const user = useSupabaseUser()
+const session = useSupabaseSession()
+const user = computed(() => session.value?.user ?? null)
 const supabase = useSupabaseClient()
 const { data: { publicUrl } } = supabase.storage.from('kurs_dateien').getPublicUrl('')
 const publicUrlBase = publicUrl.endsWith('/') ? publicUrl : publicUrl + '/'
@@ -26,6 +27,31 @@ const formatDateityp = (dbTyp) => {
 const neuerKommentar = ref('')
 const sendet = ref(false)
 const fehler = ref('')
+
+const loeschtKommentarId = ref(null)
+const loeschFehler = ref('')
+const zeigeLoeschDialog = ref(false)
+const zuLoeschendenKommentarId = ref(null)
+
+const kommentarLoeschen = (id) => {
+  zuLoeschendenKommentarId.value = id
+  zeigeLoeschDialog.value = true
+}
+
+const loeschenBestaetigen = async () => {
+  loeschtKommentarId.value = zuLoeschendenKommentarId.value
+  loeschFehler.value = ''
+  try {
+    await $fetch(`/api/datei/kommentare/${zuLoeschendenKommentarId.value}`, { method: 'DELETE' })
+    zeigeLoeschDialog.value = false
+    await refreshKommentare()
+  } catch (err) {
+    loeschFehler.value = err?.data?.message || 'Kommentar konnte nicht gelöscht werden.'
+  } finally {
+    loeschtKommentarId.value = null
+    zuLoeschendenKommentarId.value = null
+  }
+}
 
 const kommentarAbsenden = async () => {
   if (!neuerKommentar.value.trim()) return
@@ -121,9 +147,9 @@ const kommentarAbsenden = async () => {
               </div>
 
               <div
-                  v-for="k in kommentare"
-                  :key="k.id"
-                  class="bg-slate-50 dark:bg-gray-800 rounded-2xl p-4 border border-slate-100 dark:border-gray-700 transition-colors duration-300"
+                v-for="k in kommentare"
+                :key="k.id"
+                class="bg-slate-50 dark:bg-gray-800 rounded-2xl p-4 border border-slate-100 dark:border-gray-700 transition-colors duration-300"
               >
                 <div class="flex items-center gap-3 mb-2">
                   <img
@@ -131,19 +157,31 @@ const kommentarAbsenden = async () => {
                     :src="`/avatars/${k.profile.avatar}.png`"
                     :alt="k.profile?.name || 'Nutzer'"
                     class="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                  />  
+                  />
                   <div v-else class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-black">
                     {{ (k.profile?.name || 'N')[0].toUpperCase() }}
                   </div>
-                  <span class="font-bold text-sm text-slate-800 flex-1">{{ k.profile?.name || 'Nutzer' }}</span>
-                  <span class="text-xs text-slate-400 font-medium">
+                  <span class="font-bold text-sm text-slate-800 dark:text-gray-100 flex-1">{{ k.profile?.name || 'Nutzer' }}</span>
+                  <span class="text-xs text-slate-400 dark:text-gray-500 font-medium">
                     {{ new Date(k.created_at).toLocaleDateString('de-DE', {
                       day: '2-digit', month: '2-digit', year: 'numeric',
                       hour: '2-digit', minute: '2-digit'
                     }) }}
                   </span>
+                  <!-- NEU: Löschen-Button -->
+                  <button
+                    v-if="user?.id === k.nutzerID"
+                    @click="kommentarLoeschen(k.id)"
+                    :disabled="loeschtKommentarId === k.id"
+                    class="text-slate-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-40 transition-colors text-xs font-bold leading-none"
+                    title="Kommentar löschen"
+                  >
+                    <span v-if="loeschtKommentarId === k.id">...</span>
+                    <span v-else>✕</span>
+                  </button>
                 </div>
-                <p class="text-sm text-slate-700 leading-relaxed pl-11" style="overflow-wrap:anywhere;">{{ k.kommentar }}</p>
+                <p v-if="loeschFehler" class="text-red-500 text-xs font-medium mb-1 pl-11">{{ loeschFehler }}</p>
+                <p class="text-sm text-slate-700 dark:text-gray-200 leading-relaxed pl-11" style="overflow-wrap:anywhere;">{{ k.kommentar }}</p>
               </div>
             </div>
 
@@ -195,4 +233,12 @@ const kommentarAbsenden = async () => {
 
     </div>
   </div>
+
+  <ConfirmDialog
+    v-if="zeigeLoeschDialog"
+    nachricht="Möchtest du diesen Kommentar wirklich löschen?"
+    :laedt="loeschtKommentarId !== null"
+    @bestaetigen="loeschenBestaetigen"
+    @abbrechen="zeigeLoeschDialog = false; zuLoeschendenKommentarId = null"
+  />
 </template>

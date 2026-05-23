@@ -6,11 +6,37 @@ const route = useRoute()
 const { data: lecturer, refresh: refreshLecturer } = await useFetch('/api/dozenten/' + route.params.id)
 const { data: forums, refresh: refreshForums } = await useFetch('/api/dozenten/foren/' + route.params.id)
 
-const user = useSupabaseUser()
+const session = useSupabaseSession()
+const user = computed(() => session.value?.user ?? null)
+
 const neuesDiskussionsThema = ref('')
 const postet = ref(false)
 const postFehler = ref('')
-const bewertungsFehler = ref('')  // ← ZENTRAL FÜR BEIDE BEWERTUNGEN
+const loeschFehler = ref('') 
+const bewertungsFehler = ref('')
+const loeschtBeitragId = ref(null)
+const zeigeLoeschDialog = ref(false)
+const zuLoeschendeBeitragId = ref(null)
+
+const beitragLoeschen = (id) => {
+  zuLoeschendeBeitragId.value = id
+  zeigeLoeschDialog.value = true
+}
+
+const loeschenBestaetigen = async () => {
+  loeschtBeitragId.value = zuLoeschendeBeitragId.value
+  loeschFehler.value = ''
+  try {
+    await $fetch(`/api/dozenten/foren/beitrag/${zuLoeschendeBeitragId.value}`, { method: 'DELETE' })
+    zeigeLoeschDialog.value = false
+    await refreshForums()
+  } catch (err) {
+    loeschFehler.value = err?.data?.message || 'Beitrag konnte nicht gelöscht werden.'
+  } finally {
+    loeschtBeitragId.value = null
+    zuLoeschendeBeitragId.value = null
+  }
+}
 
 const diskussionPosten = async () => {
   if (!neuesDiskussionsThema.value.trim()) return
@@ -270,23 +296,41 @@ const truncateText = (text, maxLength = 200) => {
             <div v-if="!forums?.beitraege?.length" class="text-center py-4 text-slate-400 dark:text-gray-500 text-sm">
               Noch keine Diskussionen.
             </div>
-            <NuxtLink
+
+            <p v-if="loeschFehler" class="text-red-500 text-xs font-medium">{{ loeschFehler }}</p>
+
+            <div
               v-for="(item, index) in forums?.beitraege"
               :key="item.id"
-              :to="`/lecturers/${route.params.id}/${item.id}`"
-              :class="['block group', index > 0 ? 'border-t border-slate-100 dark:border-gray-700 pt-4' : '']"
+              :class="[index > 0 ? 'border-t border-slate-100 dark:border-gray-700 pt-4' : '']"
             >
-              <div class="flex items-start justify-between gap-2 mb-2">
-                <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" style="overflow-wrap:anywhere;">
-                  {{ truncateText(item.thema) }}
-                </p>
-                <span
-                  v-if="item.kommentar_dozent?.[0]?.count > 0"
-                  class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-blue-500 mt-1"
-                  title="Wurde beantwortet"
-                ></span>
+              <!-- Zeile 1: Titel + ✕ -->
+              <div class="flex items-start gap-2 mb-2">
+                <NuxtLink
+                  :to="`/lecturers/${route.params.id}/${item.id}`"
+                  class="flex-1 min-w-0 group"
+                >
+                  <p class="font-bold text-sm text-slate-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" style="overflow-wrap:anywhere;">
+                    {{ truncateText(item.thema) }}
+                  </p>
+                </NuxtLink>
+                <button
+                  v-if="user?.id === item.nutzerID"
+                  @click="beitragLoeschen(item.id)"
+                  :disabled="loeschtBeitragId === item.id"
+                  class="flex-shrink-0 text-slate-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-40 transition-colors text-xs font-bold leading-none mt-0.5"
+                  title="Beitrag löschen"
+                >
+                  <span v-if="loeschtBeitragId === item.id">...</span>
+                  <span v-else>✕</span>
+                </button>
               </div>
-              <div class="flex items-center gap-2">
+
+              <!-- Zeile 2: Avatar + Name + blauer Punkt -->
+              <NuxtLink
+                :to="`/lecturers/${route.params.id}/${item.id}`"
+                class="flex items-center gap-2"
+              >
                 <img
                   v-if="item.profile?.avatar"
                   :src="`/avatars/${item.profile.avatar}.png`"
@@ -296,12 +340,17 @@ const truncateText = (text, maxLength = 200) => {
                 <div v-else class="w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0 text-white text-[10px] font-black">
                   {{ (item.profile?.name || 'N')[0].toUpperCase() }}
                 </div>
-                <p class="text-xs font-medium text-slate-400 dark:text-gray-500">
+                <p class="text-xs font-medium text-slate-400 dark:text-gray-500 flex-1">
                   {{ item.profile?.name || 'Nutzer' }} ·
                   {{ new Date(item.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) }}
                 </p>
-              </div>
-            </NuxtLink>
+                <span
+                  v-if="item.kommentar_dozent?.[0]?.count > 0"
+                  class="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"
+                  title="Wurde beantwortet"
+                ></span>
+              </NuxtLink>
+            </div>
           </div>
 
           <!-- Eingabe -->
@@ -364,4 +413,11 @@ const truncateText = (text, maxLength = 200) => {
     />
   </div>
 
+  <ConfirmDialog
+    v-if="zeigeLoeschDialog"
+    nachricht="Möchtest du diesen Beitrag wirklich löschen?"
+    :laedt="loeschtBeitragId !== null"
+    @bestaetigen="loeschenBestaetigen"
+    @abbrechen="zeigeLoeschDialog = false; zuLoeschendeBeitragId = null"
+  />
 </template>
