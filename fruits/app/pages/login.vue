@@ -43,7 +43,7 @@
         <!-- Vorname (nur bei Registrierung) -->
         <div v-if="mode === 'register'">
           <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">
-            Vorname
+            Benutzername
           </label>
           <input
               type="text"
@@ -144,14 +144,24 @@ function istEmailGueltig(mail) {
   return emailRegex.test(mail)
 }
 
+async function istNameVergeben(name) {
+  const { vergeben } = await $fetch(`/api/auth/check-name?name=${encodeURIComponent(name.trim())}`)
+  return vergeben
+}
+
 async function createAccount() {
-  // Sicherheitscheck: Wurde ein Name eingegeben?
   if (!firstName.value || firstName.value.trim() === "") {
     showMessage("Bitte einen Vornamen eingeben.", true)
     return
   }
 
-  // Sicherheitscheck: Ist die E-Mail formal korrekt?
+  // NEU: Name auf Einzigartigkeit prüfen
+  const namevergeben = await istNameVergeben(firstName.value)
+  if (namevergeben) {
+    showMessage("Dieser Name ist bereits vergeben. Bitte wähle einen anderen.", true)
+    return
+  }
+
   if (!istEmailGueltig(email.value)) {
     showMessage("Bitte eine gültige E-Mail-Adresse eingeben.", true)
     return
@@ -178,8 +188,13 @@ async function createAccount() {
   })
 
   if (error) {
-    showMessage(error.message, true)
-  } else {
+    if (error.message.includes('unique') || error.message.includes('duplicate')) {
+      showMessage("Dieser Name ist bereits vergeben.", true)
+    } else {
+      showMessage(error.message, true)
+    }
+  }
+  else {
     showMessage("Account erstellt! Bitte E-Mail bestätigen.")
     password.value = ""
     passwordConfirm.value = ""
