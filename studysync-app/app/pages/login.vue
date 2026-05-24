@@ -144,16 +144,18 @@ async function istNameVergeben(name) {
   return vergeben
 }
 
-// NEUE FUNKTION: Passwort Reset anfordern
+//Passwort Reset anfordern
 async function resetPassword() {
   if (!email.value || !istEmailGueltig(email.value)) {
     showMessage("Bitte gib eine gültige E-Mail-Adresse ein.", true)
     return
   }
 
-  // Wichtig: Redirect-URL muss in Supabase Auth-Settings erlaubt sein!
+  // Erkennt automatisch, ob man lokal (localhost:3000) oder auf Vercel ist
+  const redirectUrl = `${window.location.origin}/update-password`
+
   const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-    redirectTo: 'http://localhost:3000/update-password', 
+    redirectTo: redirectUrl, 
   })
 
   if (error) {
@@ -190,11 +192,15 @@ async function createAccount() {
     return
   }
 
+  // Automatische URL-Erkennung für den Bestätigungslink
+  const redirectUrl = `${window.location.origin}/dashboard`
+
   const { error } = await supabase.auth.signUp({
     email: email.value,
     password: password.value,
     options: {
-      data: { first_name: firstName.value }
+      data: { first_name: firstName.value },
+      emailRedirectTo: redirectUrl 
     }
   })
 
