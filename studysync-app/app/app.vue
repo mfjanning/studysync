@@ -24,7 +24,7 @@ const supabase = useSupabaseClient()
 const isLoading = ref(true)
 
 // Nur hier dürfen Nutzer hin, die nicht eingeloggt sind und umgekehrt dürfen eingeloggte Nutzer hier nicht hin
-const publicRoutes = ['/', '/login']
+const publicRoutes = ['/', '/login', '/update-password']
 
 onMounted(async () => {
   // Warte bis Session geladen ist
@@ -41,7 +41,9 @@ onMounted(async () => {
 
   // EINGELOGGT
   else {
-    if (publicRoutes.includes(currentPath)) {
+    // Nur vom Login oder der Startseite ins Dashboard leiten!
+    // Auf /update-password darf man auch mit Session bleiben.
+    if (currentPath === '/' || currentPath === '/login') {
       await router.push('/dashboard')
     }
   }

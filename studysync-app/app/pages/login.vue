@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-slate-50 dark:bg-black flex items-center justify-center p-4 transition-colors duration-300">
     
-    <!-- Login/Register Karte im neuen Design -->
+    <!-- Login/Register Karte -->
     <div class="w-full max-w-md bg-white dark:bg-gray-900 p-8 rounded-[2rem] shadow-xl shadow-blue-900/5 dark:shadow-black/40 border border-slate-100 dark:border-gray-800 transition-colors duration-300">
 
       <!-- Dynamischer Titel -->
@@ -40,11 +40,8 @@
       <!-- Formular -->
       <div class="space-y-4">
         
-        <!-- Vorname (nur bei Registrierung) -->
         <div v-if="mode === 'register'">
-          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">
-            Benutzername
-          </label>
+          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">Benutzername</label>
           <input
               type="text"
               v-model="firstName"
@@ -53,11 +50,8 @@
           />
         </div>
 
-        <!-- E-Mail (immer) -->
         <div>
-          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">
-            E-Mail
-          </label>
+          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">E-Mail</label>
           <input
               type="email"
               v-model="email"
@@ -66,11 +60,8 @@
           />
         </div>
 
-        <!-- Passwort (immer) -->
         <div>
-          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">
-            Passwort
-          </label>
+          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">Passwort</label>
           <input
               type="password"
               v-model="password"
@@ -79,11 +70,8 @@
           />
         </div>
 
-        <!-- Passwort wiederholen (nur bei Registrierung) -->
         <div v-if="mode === 'register'">
-          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">
-            Passwort wiederholen
-          </label>
+          <label class="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-1">Passwort wiederholen</label>
           <input
               type="password"
               v-model="passwordConfirm"
@@ -92,7 +80,16 @@
           />
         </div>
 
-        <!-- Feedback-Nachricht -->
+        <!-- Passwort vergessen Button -->
+        <div v-if="mode === 'login'" class="text-right">
+          <button 
+            @click="resetPassword" 
+            class="text-xs font-bold text-slate-500 hover:text-teal-600 dark:text-gray-400 dark:hover:text-teal-400 transition-colors"
+          >
+            Passwort vergessen?
+          </button>
+        </div>
+
         <div 
           v-if="message" 
           :class="[
@@ -103,7 +100,6 @@
           {{ message }}
         </div>
 
-        <!-- Haupt-Button -->
         <button
             @click="mode === 'login' ? login() : createAccount()"
             class="w-full mt-6 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-400 hover:to-blue-400 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
@@ -138,7 +134,6 @@ function showMessage(text, error = false) {
   }, 4000) 
 }
 
-// Hilfsfunktion: Prüft, ob eine E-Mail gültig aussieht
 function istEmailGueltig(mail) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(mail)
@@ -149,16 +144,34 @@ async function istNameVergeben(name) {
   return vergeben
 }
 
+// NEUE FUNKTION: Passwort Reset anfordern
+async function resetPassword() {
+  if (!email.value || !istEmailGueltig(email.value)) {
+    showMessage("Bitte gib eine gültige E-Mail-Adresse ein.", true)
+    return
+  }
+
+  // Wichtig: Redirect-URL muss in Supabase Auth-Settings erlaubt sein!
+  const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+    redirectTo: 'http://localhost:3000/update-password', 
+  })
+
+  if (error) {
+    showMessage("Fehler: " + error.message, true)
+  } else {
+    showMessage("Überprüfe deine E-Mails für den Reset-Link!")
+  }
+}
+
 async function createAccount() {
   if (!firstName.value || firstName.value.trim() === "") {
     showMessage("Bitte einen Vornamen eingeben.", true)
     return
   }
 
-  // NEU: Name auf Einzigartigkeit prüfen
   const namevergeben = await istNameVergeben(firstName.value)
   if (namevergeben) {
-    showMessage("Dieser Name ist bereits vergeben. Bitte wähle einen anderen.", true)
+    showMessage("Dieser Name ist bereits vergeben.", true)
     return
   }
 
@@ -167,19 +180,17 @@ async function createAccount() {
     return
   }
 
-  // Sicherheitscheck: Stimmen die Passwörter überein?
   if (password.value !== passwordConfirm.value) {
     showMessage("Die Passwörter stimmen nicht überein.", true)
     return
   }
 
-  // Sicherheitscheck: Ist das Passwort lang genug?
   if (password.value.length < 6) {
     showMessage("Das Passwort muss mindestens 6 Zeichen lang sein.", true)
     return
   }
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email: email.value,
     password: password.value,
     options: {
@@ -188,11 +199,7 @@ async function createAccount() {
   })
 
   if (error) {
-    if (error.message.includes('unique') || error.message.includes('duplicate')) {
-      showMessage("Dieser Name ist bereits vergeben.", true)
-    } else {
-      showMessage(error.message, true)
-    }
+    showMessage(error.message, true)
   }
   else {
     showMessage("Account erstellt! Bitte E-Mail bestätigen.")
@@ -202,19 +209,18 @@ async function createAccount() {
 }
 
 async function login() {
-  // Auch beim Login prüfen, ob die E-Mail überhaupt gültig ist
   if (!istEmailGueltig(email.value)) {
     showMessage("Bitte eine gültige E-Mail-Adresse eingeben.", true)
     return
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value
   })
 
   if (error) {
-    showMessage("Login fehlgeschlagen. Bitte E-Mail und Passwort prüfen.", true)
+    showMessage("Login fehlgeschlagen.", true)
   } else {
     showMessage("Erfolgreich eingeloggt!")
     await navigateTo("/dashboard")
