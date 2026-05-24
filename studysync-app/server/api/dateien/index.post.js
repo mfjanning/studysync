@@ -1,5 +1,6 @@
 import { serverSupabaseClient } from '#supabase/server';
 import { readMultipartFormData } from 'h3'
+import { randomUUID } from 'crypto';
 
 /**
  * uploads a file to storage in supabase if the user is authenticated only
@@ -34,7 +35,11 @@ export default eventHandler(async (event) => {
   const kursID = kursIdData.data.toString();
   const typ = typData.data.toString();
   const dateiname = fileData.filename;
-  const einzigartigerDateiname = `${user.id}-${Date.now()}-${dateiname}`;
+
+  const ext = fileData.filename?.split('.').pop();
+  const uuidName = `${randomUUID()}.${ext}`;
+  const einzigartigerDateiname = `${user.id}-${Date.now()}-${uuidName}`;
+
   const dateipfad = `${typ}/${kursID}/${einzigartigerDateiname}`;
 
   // NEU: Jahr und Semester als Text auslesen (kein parseInt mehr für das Jahr)
@@ -73,6 +78,7 @@ export default eventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Datei-Informationen konnten nicht gespeichert werden.' });
   }
   
-  console.log('Upload erfolgreich:', dbData);
+  console.log("RAW filename:", fileData.filename);
+  console.log("TYPE:", fileData.type);
   return { success: true, file: dbData };
 });
