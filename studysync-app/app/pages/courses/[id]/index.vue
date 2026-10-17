@@ -402,20 +402,29 @@ const toggleAbo = async () => {
 
               <div class="mb-6 max-w-sm">
                 <label for="datei-dozent-filter" class="block text-sm font-bold text-slate-600 dark:text-gray-300 mb-2">
-                  Dateien von
+                  Dateien nach Dozierenden filtern
                 </label>
-                <div class="relative">
+                <div class="relative group">
+                  <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-green-600 dark:text-green-400">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m16 0v-2a4 4 0 0 0-3-3.87M14 3.13a4 4 0 0 1 0 7.75M14 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                    </svg>
+                  </span>
                   <select
                     id="datei-dozent-filter"
                     v-model="dateiDozentFilter"
-                    class="w-full appearance-none p-4 pr-12 rounded-xl border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 text-slate-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-400 transition-colors duration-300"
+                    class="w-full appearance-none py-3.5 pl-12 pr-11 rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100 font-semibold shadow-sm hover:border-green-300 dark:hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-400/70 focus:border-green-400 transition-colors duration-200 cursor-pointer"
                   >
-                    <option value="">Alle Lehrenden</option>
+                    <option value="">Alle Dozierenden</option>
                     <option v-for="dozent in dozentenListe" :key="dozent.id" :value="String(dozent.id)">
                       {{ dozent.vorname }} {{ dozent.nachname }}
                     </option>
                   </select>
-                  <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400 dark:text-gray-500">⌄</span>
+                  <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400 dark:text-gray-500 group-focus-within:text-green-600 dark:group-focus-within:text-green-400 transition-colors">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M5.22 7.47a.75.75 0 0 1 1.06 0L10 11.19l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                    </svg>
+                  </span>
                 </div>
               </div>
 
@@ -516,20 +525,29 @@ const toggleAbo = async () => {
 
             <div class="mt-4">
               <label for="bewertung-dozent-filter" class="block text-sm font-bold text-slate-500 dark:text-gray-400 mb-2">
-                Bewertungen von
+                Bewertungen nach Dozierenden filtern
               </label>
-              <div class="relative">
+              <div class="relative group">
+                <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-green-600 dark:text-green-400">
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m16 0v-2a4 4 0 0 0-3-3.87M14 3.13a4 4 0 0 1 0 7.75M14 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                  </svg>
+                </span>
                 <select
                   id="bewertung-dozent-filter"
                   v-model="bewertungDozentFilter"
-                  class="w-full appearance-none p-4 pr-12 rounded-xl border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 text-slate-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-400 transition-colors duration-300"
+                  class="w-full appearance-none py-3.5 pl-12 pr-11 rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-100 font-semibold shadow-sm hover:border-green-300 dark:hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-400/70 focus:border-green-400 transition-colors duration-200 cursor-pointer"
                 >
-                  <option value="">Alle Lehrenden</option>
+                  <option value="">Alle Dozierenden</option>
                   <option v-for="dozent in dozentenListe" :key="dozent.id" :value="String(dozent.id)">
                     {{ dozent.vorname }} {{ dozent.nachname }}
                   </option>
                 </select>
-                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400 dark:text-gray-500">⌄</span>
+                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400 dark:text-gray-500 group-focus-within:text-green-600 dark:group-focus-within:text-green-400 transition-colors">
+                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.22 7.47a.75.75 0 0 1 1.06 0L10 11.19l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                  </svg>
+                </span>
               </div>
             </div>
 
